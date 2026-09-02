@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { 
+    @apply bg-canteen-bg text-canteen-textPrimary font-sans antialiased; 
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(196, 18, 48, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(196, 18, 48, 0); }
+  100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(196, 18, 48, 0); }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s infinite;
+}
