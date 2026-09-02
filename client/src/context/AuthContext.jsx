@@ -1,23 +1,30 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
-import { STORAGE_KEYS, setStorage, removeStorage, getStorage } from '../utils/constants';
+import { getToken, saveToken, removeToken, saveUser, removeUser, getUser } from '../utils/storage';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => getUser()); // Restore from localStorage immediately
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = getStorage(STORAGE_KEYS.TOKEN);
+      const token = getToken();
       if (token) {
+        // Set axios default header immediately
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         try {
           const { data } = await api.get('/auth/me');
-          setUser(data.user);
+          const freshUser = data.data || data.user;
+          setUser(freshUser);
+          saveUser(freshUser);
         } catch (error) {
-          console.error('Auth check failed', error);
-          removeStorage(STORAGE_KEYS.TOKEN);
+          // Token invalid or expired
+          removeToken();
+          removeUser();
+          setUser(null);
+          delete api.defaults.headers.common['Authorization'];
         }
       }
       setIsLoading(false);
@@ -27,20 +34,26 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
-    setStorage(STORAGE_KEYS.TOKEN, data.token);
+    saveToken(data.token);
+    saveUser(data.user);
+    api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
     setUser(data.user);
     return data.user;
   };
 
   const register = async (userData) => {
     const { data } = await api.post('/auth/register', userData);
-    setStorage(STORAGE_KEYS.TOKEN, data.token);
+    saveToken(data.token);
+    saveUser(data.user);
+    api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
     setUser(data.user);
     return data.user;
   };
 
   const logout = () => {
-    removeStorage(STORAGE_KEYS.TOKEN);
+    removeToken();
+    removeUser();
+    delete api.defaults.headers.common['Authorization'];
     setUser(null);
   };
 
