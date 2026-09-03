@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
 
 export const NotificationContext = createContext();
+export const useNotification = () => useContext(NotificationContext);
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
@@ -14,9 +15,10 @@ export const NotificationProvider = ({ children }) => {
 
   const fetchNotifications = async () => {
     try {
-      const data = await notificationService.getMyNotifications();
-      setNotifications(data.notifications || []);
-      setUnreadCount(data.unreadCount || 0);
+      const data = await notificationService.getMyNotifications(); // returns array
+      const list = Array.isArray(data) ? data : (data?.notifications || []);
+      setNotifications(list);
+      setUnreadCount(list.filter(n => !n.isRead).length);
     } catch (error) {
       console.error('Failed to fetch notifications', error);
     }
