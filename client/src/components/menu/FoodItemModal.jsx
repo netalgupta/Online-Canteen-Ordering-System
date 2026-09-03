@@ -7,7 +7,7 @@ import { useCart } from '../../hooks/useCart';
 import { CATEGORY_EMOJIS } from '../../utils/constants';
 
 const FoodItemModal = ({ item, isOpen, onClose }) => {
-  const { items, addItem, updateQuantity } = useCart();
+  const { items, addItem, updateQuantity, updateInstructions } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [instructions, setInstructions] = useState('');
 
@@ -31,7 +31,7 @@ const FoodItemModal = ({ item, isOpen, onClose }) => {
     if (cartItem) {
       updateQuantity(item._id, quantity);
       if (instructions !== cartItem.specialInstructions) {
-        useCart().updateInstructions(item._id, instructions); // Needs context access directly if not destructured, wait we have addItem logic handling update basically, or just clear and add.
+        updateInstructions(item._id, instructions);
       }
     } else {
       addItem(item, quantity, instructions);
