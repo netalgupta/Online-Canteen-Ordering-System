@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import PageLayout from '../../components/layout/PageLayout';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
@@ -10,10 +11,11 @@ import { menuService } from '../../services/menu.service';
 import { orderService } from '../../services/order.service';
 import { HEAT_CONFIG, ACTIVE_STATUSES } from '../../utils/constants';
 import OrderStatusBadge from '../../components/orders/OrderStatusBadge';
-import { AlertCircle, Clock, ShoppingBag } from 'lucide-react';
+import { AlertCircle, ArrowRight, Clock, Search, ShoppingBag } from 'lucide-react';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [heat, setHeat] = useState('low');
   const [canteenStatus, setCanteenStatus] = useState({ isOpen: true, closeTime: '21:00' });
   const [activeOrder, setActiveOrder] = useState(null);
@@ -36,7 +38,7 @@ const HomePage = () => {
   const isPeakHour = heat === 'high';
 
   return (
-    <PageLayout title="Student Dashboard" breadcrumb="Student Dashboard">
+    <PageLayout title={`Good afternoon, ${user?.name?.split(' ')[0] || 'Student'} 👋`} subtitle="What are you craving today?" breadcrumb="Home">
       
       {/* Alert Banner for Peak Hours */}
       {isPeakHour && (
@@ -48,6 +50,20 @@ const HomePage = () => {
           </div>
         </div>
       )}
+
+      <div className="student-home-search" onClick={() => navigate('/menu')}>
+        <Search className="h-5 w-5" />
+        <span>Search food, drinks and snacks...</span>
+      </div>
+
+      <div className="student-category-row">
+        {['Snacks', 'Lunch', 'Hot Items', 'Sandwiches', 'Dosa'].map((category) => (
+          <button key={category} onClick={() => navigate(`/menu?category=${encodeURIComponent(category)}`)}>
+            <span>{category === 'Lunch' ? '🍱' : category === 'Hot Items' ? '☕' : category === 'Dosa' ? '🫓' : category === 'Sandwiches' ? '🥙' : '🥪'}</span>
+            {category}
+          </button>
+        ))}
+      </div>
 
       {/* Top Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -72,22 +88,19 @@ const HomePage = () => {
         </Card>
 
         {/* Active Order Card */}
-        <Card className={`p-6 border-l-4 ${activeOrder ? 'border-amber-500' : 'border-gray-300'}`}>
+        <Card className={`queue-order-card p-6 border-l-4 ${activeOrder ? 'border-amber-500' : 'border-gray-300'}`}>
           {activeOrder ? (
-            <div className="flex justify-between items-center h-full">
-              <div className="flex items-center">
-                <div className="rounded-full bg-amber-50 p-3 mr-4 text-amber-600">
-                  <ShoppingBag className="w-6 h-6" />
-                </div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">Active Order</p>
-                  <h2 className="text-xl font-bold text-gray-800">#{activeOrder.orderNumber}</h2>
-                  <div className="mt-1"><OrderStatusBadge status={activeOrder.status} /></div>
+                  <p className="queue-order-label">Order #{activeOrder.orderNumber}</p>
+                  <h2 className="text-xl font-bold">{activeOrder.status === 'preparing' ? 'Preparing' : 'Order in progress'}</h2>
                 </div>
+                <OrderStatusBadge status={activeOrder.status} />
               </div>
-              <Button onClick={() => navigate(`/order/${activeOrder._id}`)} variant="outline">
-                Track
-              </Button>
+              <div className="queue-order-meta"><span>Estimated ready</span><strong>20 min</strong><span>Pickup token</span><strong>{activeOrder.pickupCode || '----'}</strong></div>
+              <div className="queue-order-progress"><span></span></div>
+              <Button onClick={() => navigate(`/order/${activeOrder._id}`)} variant="primary" size="sm">Track Order <ArrowRight className="h-4 w-4" /></Button>
             </div>
           ) : (
             <div className="flex items-center h-full opacity-60">

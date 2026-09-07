@@ -9,7 +9,7 @@ const MenuCard = ({ item, onClick, onAdd }) => {
 
   return (
     <div 
-      className={`card overflow-hidden group flex flex-col relative h-full ${
+      className={`queue-food-card card overflow-hidden group flex flex-col relative h-full ${
         isAvailable ? 'hover:shadow-md cursor-pointer border-b-2 border-b-primary-600' : 'opacity-75'
       }`}
       onClick={() => isAvailable && onClick && onClick(item)}

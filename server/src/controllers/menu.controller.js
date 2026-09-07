@@ -18,7 +18,7 @@ const getItems = async (req, res, next) => {
       if (category.match(/^[0-9a-fA-F]{24}$/)) {
         query.category = category;
       } else {
-        const cat = await Category.findOne({ slug: category });
+        const cat = await Category.findOne({ $or: [{ slug: category }, { name: category }] });
         if (cat) query.category = cat._id;
       }
     }

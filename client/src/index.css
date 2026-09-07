@@ -4,7 +4,7 @@
 
 @layer base {
   body { 
-    @apply bg-content text-gray-800 font-sans antialiased; 
+    @apply bg-content text-gray-800 font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
 }
@@ -20,10 +20,251 @@
   
   .page-title {
     @apply text-2xl font-bold text-gray-800;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  .page-shell {
+    padding: 2rem 1.5rem 3rem;
+  }
+
+  .page-heading {
+    margin-bottom: 1.5rem;
+  }
+
+  .page-subtitle {
+    margin-top: 0.35rem;
+    color: #6b7280;
+    font-size: 0.875rem;
   }
   
   .card {
     @apply bg-white rounded border border-gray-200 shadow-sm;
+  }
+}
+
+.student-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.category-chip {
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: 1.5px solid #dcd9cf;
+  background: #fff;
+  color: #565b68;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.category-chip:hover {
+  border-color: #1b1f2a;
+  color: #1b1f2a;
+}
+
+.category-chip.active {
+  border-color: #1b1f2a;
+  background: #1b1f2a;
+  color: #f8f7f3;
+}
+
+.queue-food-card {
+  border-color: #dcd9cf;
+  border-radius: 0.875rem;
+  box-shadow: 0 1px 2px rgba(27, 31, 42, 0.06);
+}
+
+.queue-food-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(27, 31, 42, 0.1);
+}
+
+.queue-order-card {
+  overflow: hidden;
+  border: 0;
+  border-radius: 1.125rem;
+  background: #1b1f2a;
+  color: #f8f7f3;
+  box-shadow: 0 8px 24px rgba(27, 31, 42, 0.12);
+}
+
+.queue-order-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 90% 0%, rgba(255, 107, 53, 0.25), transparent 55%);
+}
+
+.queue-order-label {
+  color: rgba(248, 247, 243, 0.6);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.queue-order-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem 1.5rem;
+  margin: 1.1rem 0;
+}
+
+.queue-order-meta span {
+  color: rgba(248, 247, 243, 0.55);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.queue-order-meta strong {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1rem;
+}
+
+.queue-order-progress {
+  height: 0.45rem;
+  margin-bottom: 1rem;
+  border-radius: 999px;
+  background: rgba(248, 247, 243, 0.15);
+  overflow: hidden;
+}
+
+.queue-order-progress span {
+  display: block;
+  width: 58%;
+  height: 100%;
+  border-radius: inherit;
+  background: #ff6b35;
+}
+
+.student-home-search {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.9rem;
+  margin: 1.25rem 0 1rem;
+  padding: 0 1rem;
+  border: 1.5px solid #dcd9cf;
+  border-radius: 999px;
+  background: #fff;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.student-category-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.student-category-row::-webkit-scrollbar {
+  display: none;
+}
+
+.student-category-row button {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: 4.8rem;
+  color: #565b68;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.student-category-row button span {
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  place-items: center;
+  border: 1px solid #dcd9cf;
+  border-radius: 1rem;
+  background: #fff;
+  font-size: 1.35rem;
+}
+
+.student-category-row button:hover span {
+  border-color: #1b1f2a;
+}
+
+.student-search {
+  flex: 1 1 18rem;
+}
+
+.student-toolbar .student-search > div {
+  position: relative;
+}
+
+.student-toolbar .student-search input {
+  width: 100%;
+  min-height: 2.75rem;
+  border-radius: 999px;
+  border: 1.5px solid #dcd9cf;
+  background: #fff;
+}
+
+.student-toolbar .student-search input:focus {
+  border-color: #1b1f2a;
+}
+
+.student-toolbar > label:not(.student-sort) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.9rem;
+  border: 1.5px solid #dcd9cf;
+  border-radius: 999px;
+  background: #fff;
+  white-space: nowrap;
+}
+
+.student-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+  padding: 0.2rem 0.75rem;
+  border: 1.5px solid #dcd9cf;
+  border-radius: 999px;
+  background: #fff;
+  color: #565b68;
+}
+
+.student-sort select {
+  border: 0;
+  background: transparent;
+  color: #1b1f2a;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  outline: 0;
+}
+
+@media (max-width: 560px) {
+  .page-shell {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .student-toolbar {
+    align-items: stretch;
+  }
+
+  .student-search {
+    flex-basis: 100%;
+  }
+
+  .student-toolbar > label:not(.student-sort),
+  .student-sort {
+    flex: 1;
+    justify-content: center;
   }
 }
 

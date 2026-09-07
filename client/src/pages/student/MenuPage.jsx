@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PageLayout from '../../components/layout/PageLayout';
+import { useSearchParams } from 'react-router-dom';
 import SearchBar from '../../components/menu/SearchBar';
 import VegFilter from '../../components/menu/VegFilter';
 import CategoryTabs from '../../components/menu/CategoryTabs';
@@ -8,12 +9,14 @@ import FoodItemModal from '../../components/menu/FoodItemModal';
 import { menuService } from '../../services/menu.service';
 import { useApi } from '../../hooks/useApi';
 import { useSocket } from '../../hooks/useSocket';
-import Card from '../../components/ui/Card';
+import { ArrowDownUp } from 'lucide-react';
 
 const MenuPage = () => {
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [isVegOnly, setIsVegOnly] = useState(false);
+  const [sortBy, setSortBy] = useState('popular');
   
   const [selectedItem, setSelectedItem] = useState(null);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -61,18 +64,28 @@ const MenuPage = () => {
     setModalOpen(true);
   };
 
+  const sortedItems = [...items].sort((first, second) => {
+    if (sortBy === 'price-asc') return first.price - second.price;
+    if (sortBy === 'price-desc') return second.price - first.price;
+    if (sortBy === 'prep-asc') return first.preparationTime - second.preparationTime;
+    return Number(second.isPopular) - Number(first.isPopular);
+  });
+
   return (
-    <PageLayout title="Menu" breadcrumb="Menu">
-      <Card className="mb-6 p-4">
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="flex-1 w-full">
-            <SearchBar onSearch={setSearchQuery} />
-          </div>
-          <div className="flex items-center shrink-0 border-l border-gray-200 pl-4 h-10">
-            <VegFilter isVegOnly={isVegOnly} onChange={setIsVegOnly} />
-          </div>
-        </div>
-      </Card>
+    <PageLayout title="Full Menu" subtitle="Prep time shown on every item, so there are no surprises at checkout." breadcrumb="Menu">
+      <div className="student-toolbar">
+        <div className="student-search"><SearchBar onSearch={setSearchQuery} /></div>
+        <VegFilter isVegOnly={isVegOnly} onChange={setIsVegOnly} />
+        <label className="student-sort" title="Sort menu items">
+          <ArrowDownUp className="h-4 w-4" />
+          <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort menu">
+            <option value="popular">Popular</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="prep-asc">Fastest Prep</option>
+          </select>
+        </label>
+      </div>
 
       <div className="mb-6">
         <CategoryTabs 
@@ -83,7 +96,7 @@ const MenuPage = () => {
       </div>
 
       <MenuGrid 
-        items={items} 
+        items={sortedItems} 
         loading={loading} 
         onCardClick={handleCardClick}
       />
