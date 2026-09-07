@@ -120,15 +120,10 @@ const seedDB = async () => {
     await SystemSettings.getSettings();
     
     console.log('Creating demo users...');
-    const salt = await bcrypt.genSalt(10);
-    const hashAdmin = await bcrypt.hash('Admin@123', salt);
-    const hashStaff = await bcrypt.hash('Staff@123', salt);
-    const hashStudent = await bcrypt.hash('Student@123', salt);
-    
-    const admin = await User.create({ name: 'Admin User', email: 'admin@somaiya.edu', password: hashAdmin, role: 'admin', phone: '9999999999' });
-    const staff = await User.create({ name: 'Kitchen Staff', email: 'staff@somaiya.edu', password: hashStaff, role: 'staff', phone: '8888888888' });
-    const student1 = await User.create({ name: 'Rahul Sharma', email: 'rahul@somaiya.edu', password: hashStudent, role: 'student', rollNumber: 'SVV2024001', phone: '7777777777' });
-    const student2 = await User.create({ name: 'Priya Patel', email: 'priya@somaiya.edu', password: hashStudent, role: 'student', rollNumber: 'SVV2024002', phone: '6666666666' });
+    const admin   = await User.create({ name: 'Admin User',    email: 'admin@somaiya.edu', password: 'Admin@123',   role: 'admin',   phone: '9999999999' });
+    const staff   = await User.create({ name: 'Kitchen Staff', email: 'staff@somaiya.edu', password: 'Staff@123',   role: 'staff',   phone: '8888888888' });
+    const student1 = await User.create({ name: 'Rahul Sharma', email: 'rahul@somaiya.edu', password: 'Student@123', role: 'student', rollNumber: 'SVV2024001', phone: '7777777777' });
+    const student2 = await User.create({ name: 'Priya Patel',  email: 'priya@somaiya.edu', password: 'Student@123', role: 'student', rollNumber: 'SVV2024002', phone: '6666666666' });
     
     console.log('Creating categories...');
     const categoriesMap = {};
