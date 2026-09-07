@@ -9,6 +9,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -29,78 +30,99 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <div className="h-2 w-full bg-primary-600"></div>
-      
-      <div className="flex-1 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex justify-center text-primary-600 text-5xl mb-2">🍽</div>
-          <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-            Siddhi Canteen
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Somaiya Vidyavihar University
-          </p>
+    <div className="flex min-h-screen bg-white">
+      {/* Left Panel */}
+      <div className="hidden md:flex w-[55%] relative overflow-hidden bg-gradient-to-br from-[#8B1020] via-[#C41230] to-[#1E2433]">
+        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-center text-white">
+          <h1 className="text-4xl font-bold mb-2">Siddhi Services Canteen</h1>
+          <p className="text-xl text-white/80 mb-12">Somaiya Vidyavihar University</p>
+          
+          <div className="mt-auto pt-12 border-t border-white/20 w-full flex justify-around text-center">
+            <div>
+              <div className="text-3xl font-bold">60+</div>
+              <div className="text-sm text-white/70">Menu Items</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold">500+</div>
+              <div className="text-sm text-white/70">Orders Daily</div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100">
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <Input
-                label="Email address"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@somaiya.edu"
-              />
+      {/* Right Panel */}
+      <div className="w-full md:w-[45%] flex flex-col justify-center px-8 sm:px-16 py-10">
+        <div className="w-full max-w-md mx-auto">
+          {/* Logos Row */}
+          <div className="flex flex-wrap items-center gap-2 mb-8 text-[10px] font-bold text-gray-700 tracking-wider">
+            <span className="flex items-center gap-1"><span className="text-primary-600">🔴</span> SOMAIYA VIDYAVIHAR</span>
+            <span className="text-gray-300">|</span>
+            <span className="flex items-center gap-1"><span className="text-primary-600">🔴</span> SOMAIYA VIDYAVIHAR UNIVERSITY</span>
+            <span className="text-gray-300">|</span>
+            <span className="flex items-center gap-1"><span className="text-green-600">🟢</span> SOMAIYA AYURVIHAR</span>
+          </div>
+
+          <h2 className="text-[22px] font-bold text-gray-800 mb-1">
+            Welcome to Siddhi Canteen Portal
+          </h2>
+          <p className="text-sm text-gray-500 mb-8">
+            Please enter your credentials to login.
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <Input
+              label="Email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+            />
+            
+            <div className="relative">
               <Input
                 label="Password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
               />
+              <button 
+                type="button" 
+                className="absolute right-3 top-[32px] text-gray-500 text-xs font-medium hover:text-gray-700 focus:outline-none"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? "HIDE" : "SHOW"}
+              </button>
+            </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                    Remember me
-                  </label>
-                </div>
-              </div>
+            <Button type="submit" variant="dark" fullWidth loading={loading} className="mt-2 py-2.5">
+              Login
+            </Button>
+          </form>
 
-              <Button type="submit" fullWidth loading={loading} size="lg">
-                Sign in
-              </Button>
-            </form>
-
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">
-                    New to Canteen?
-                  </span>
-                </div>
-              </div>
-              <div className="mt-6">
-                <Link to="/register">
-                  <Button variant="secondary" fullWidth>
-                    Create an account
-                  </Button>
-                </Link>
-              </div>
+          <div className="mt-8 relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-4 bg-white text-gray-400 font-medium">OR</span>
             </div>
           </div>
+
+          <div className="mt-8">
+            <Link to="/register">
+              <Button variant="outline" fullWidth className="py-2.5">
+                Create Account
+              </Button>
+            </Link>
+          </div>
+
+          <p className="mt-8 text-xs text-center text-gray-400">
+            For support, please contact helpdesk@somaiya.edu
+          </p>
         </div>
       </div>
     </div>

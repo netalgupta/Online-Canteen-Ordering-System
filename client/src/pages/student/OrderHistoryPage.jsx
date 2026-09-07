@@ -50,7 +50,7 @@ const OrderHistoryPage = () => {
   };
 
   return (
-    <PageLayout title="My Orders">
+    <PageLayout title="My Orders" breadcrumb="Orders">
       {loading ? (
         <div className="flex justify-center py-12"><div className="animate-spin text-primary-600">⏳</div></div>
       ) : orders.length === 0 ? (
@@ -61,7 +61,7 @@ const OrderHistoryPage = () => {
           action={<button onClick={() => navigate('/menu')} className="text-primary-600 font-medium">Browse Menu</button>}
         />
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="card overflow-hidden">
           {orders.map(order => (
             <OrderCard key={order._id} order={order} onReorder={handleReorder} />
           ))}

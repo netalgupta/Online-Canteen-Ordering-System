@@ -53,14 +53,14 @@ const InventoryPage = () => {
   }, {});
 
   return (
-    <PageLayout title="Inventory Status">
-      <Card className="mb-6">
+    <PageLayout title="Inventory Status" breadcrumb="Dashboard > Inventory">
+      <div className="card p-4 mb-6">
         <Input 
           placeholder="Search items..." 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-      </Card>
+      </div>
 
       {loading ? (
         <div className="text-center py-12">Loading inventory...</div>
@@ -69,7 +69,7 @@ const InventoryPage = () => {
           {Object.entries(grouped).map(([category, catItems]) => (
             <div key={category}>
               <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-gray-100">{category}</h3>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden divide-y divide-gray-100">
+              <div className="card overflow-hidden divide-y divide-gray-100">
                 {catItems.map(item => (
                   <div key={item._id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">

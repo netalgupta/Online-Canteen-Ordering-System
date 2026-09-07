@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import { formatRelative, formatTime } from '../../utils/time';
@@ -7,7 +6,6 @@ import { formatRelative, formatTime } from '../../utils/time';
 const StaffOrderCard = ({ order, onStatusChange }) => {
   const [isRejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
-  const [isRejecting, setIsRejecting] = useState(false);
   const [isActioning, setIsActioning] = useState(false);
 
   const { _id, orderNumber, user, items, status, createdAt, statusHistory } = order;
@@ -25,20 +23,27 @@ const StaffOrderCard = ({ order, onStatusChange }) => {
     }
   };
 
+  const statusColors = {
+    received: 'border-l-red-500',
+    accepted: 'border-l-blue-500',
+    preparing: 'border-l-amber-500',
+    ready: 'border-l-green-500',
+  };
+
   const renderActions = () => {
     switch (status) {
       case 'received':
         return (
           <div className="flex gap-2 w-full mt-4">
             <Button 
-              className="flex-1 bg-green-600 hover:bg-green-700"
+              className="flex-1 bg-green-600 hover:bg-green-700 font-bold"
               loading={isActioning}
               onClick={() => handleAction('accepted')}
             >
               Accept
             </Button>
             <Button 
-              className="flex-1 bg-white border border-red-500 text-red-600 hover:bg-red-50"
+              className="flex-1 bg-white border border-red-500 text-red-600 hover:bg-red-50 font-bold"
               onClick={() => setRejectModalOpen(true)}
               disabled={isActioning}
             >
@@ -49,7 +54,7 @@ const StaffOrderCard = ({ order, onStatusChange }) => {
       case 'accepted':
         return (
           <Button 
-            fullWidth className="mt-4 bg-amber-500 hover:bg-amber-600 focus:ring-amber-500 text-white h-12"
+            fullWidth className="mt-4 bg-amber-500 hover:bg-amber-600 focus:ring-amber-500 text-white h-10 font-bold"
             loading={isActioning}
             onClick={() => handleAction('preparing')}
           >
@@ -59,7 +64,7 @@ const StaffOrderCard = ({ order, onStatusChange }) => {
       case 'preparing':
         return (
           <Button 
-            fullWidth className="mt-4 bg-green-500 hover:bg-green-600 focus:ring-green-500 text-white h-12"
+            fullWidth className="mt-4 bg-green-500 hover:bg-green-600 focus:ring-green-500 text-white h-10 font-bold"
             loading={isActioning}
             onClick={() => handleAction('ready')}
           >
@@ -69,7 +74,7 @@ const StaffOrderCard = ({ order, onStatusChange }) => {
       case 'ready':
         return (
           <Button 
-            fullWidth className="mt-4 bg-gray-800 hover:bg-gray-900 focus:ring-gray-800 text-white h-12"
+            fullWidth className="mt-4 bg-gray-800 hover:bg-gray-900 focus:ring-gray-800 text-white h-10 font-bold"
             loading={isActioning}
             onClick={() => handleAction('collected')}
           >
@@ -81,39 +86,42 @@ const StaffOrderCard = ({ order, onStatusChange }) => {
     }
   };
 
+  const hasSpecialInstructions = items.some(i => i.specialInstructions);
+
   return (
     <>
-      <Card className="flex flex-col mb-3">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-xl font-bold text-gray-900">#{orderNumber}</h3>
+      <div className={`card p-4 flex flex-col mb-3 border-l-4 ${statusColors[status] || 'border-l-gray-300'}`}>
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">#{orderNumber}</h3>
+            <p className="text-sm font-medium text-gray-700">{user?.name || 'Student'}</p>
+          </div>
           <div className="text-right">
             <p className="text-xs text-gray-500">{formatTime(createdAt)}</p>
-            <p className="text-xs font-medium text-gray-700">{timeInStatus}</p>
+            <p className="text-xs font-bold text-gray-400 mt-0.5">{timeInStatus}</p>
           </div>
         </div>
-        
-        <p className="text-sm font-medium text-gray-800 mb-3">{user?.name || 'Student'}</p>
 
-        <div className="bg-gray-50 rounded-lg p-3 space-y-2 mb-2">
+        <div className="space-y-1 mb-2">
           {items.map((item, idx) => (
             <div key={idx} className="flex justify-between text-sm">
-              <span className="font-semibold text-gray-900">{item.quantity}×</span>
-              <span className="flex-1 ml-2 text-gray-700">{item.foodItem?.name || 'Item'}</span>
+              <span className="font-bold text-gray-900 w-6">{item.quantity}×</span>
+              <span className="flex-1 text-gray-700">{item.foodItem?.name || 'Item'}</span>
             </div>
           ))}
         </div>
 
-        {items.some(i => i.specialInstructions) && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mb-2">
-            <span className="text-yellow-700 font-bold mr-1">⚠</span>
-            <span className="text-xs text-yellow-800 font-medium">
+        {hasSpecialInstructions && (
+          <div className="bg-amber-50 border border-amber-200 rounded p-2 mb-2 mt-2">
+            <div className="text-xs text-amber-800 font-medium">
+              <span className="font-bold mr-1">Note:</span>
               {items.filter(i => i.specialInstructions).map(i => i.specialInstructions).join(' | ')}
-            </span>
+            </div>
           </div>
         )}
 
         {renderActions()}
-      </Card>
+      </div>
 
       <Modal isOpen={isRejectModalOpen} onClose={() => setRejectModalOpen(false)} title="Reject Order">
         <div className="space-y-4">

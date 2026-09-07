@@ -54,9 +54,9 @@ const PickupVerificationPage = () => {
   };
 
   return (
-    <PageLayout title="Pickup Verification">
+    <PageLayout title="Pickup Verification" breadcrumb="Dashboard > Pickup">
       <div className="max-w-xl mx-auto space-y-6">
-        <Card className="text-center p-8 border-2 border-primary-100">
+        <Card className="text-center p-8 border-t-4 border-t-primary-600">
           <h2 className="text-xl font-bold text-gray-900 mb-6">Enter 4-Digit Pickup Code</h2>
           <form onSubmit={handleVerify}>
             <input
@@ -82,13 +82,13 @@ const PickupVerificationPage = () => {
         </Card>
 
         {orderData && (
-          <Card className="border-2 border-green-500 shadow-lg relative overflow-hidden animate-in slide-in-from-bottom-4">
+          <Card className="border-2 border-green-500 shadow-lg relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
             <div className="p-2">
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h3 className="text-3xl font-black text-gray-900 mb-1">#{orderData.orderNumber}</h3>
-                  <p className="text-lg font-medium text-gray-700">{orderData.user?.name}</p>
+                  <p className="text-lg font-medium text-gray-700">{orderData.student?.name}</p>
                 </div>
                 <div className="text-right">
                   <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold uppercase tracking-wider mb-1">
@@ -101,7 +101,8 @@ const PickupVerificationPage = () => {
               <div className="bg-gray-50 rounded-lg p-4 space-y-3 mb-6">
                 {orderData.items.map((item, idx) => (
                   <div key={idx} className="flex justify-between text-lg font-medium">
-                    <span>{item.quantity}× {item.foodItem.name}</span>
+                    <span>{item.quantity}× {item.name}</span>
+                    <span className="text-gray-600">₹{item.price * item.quantity}</span>
                   </div>
                 ))}
               </div>

@@ -57,9 +57,9 @@ const OrderTimeline = ({ order }) => {
 
           return (
             <div key={step} className="relative">
-              <div className={`absolute -left-[25px] w-5 h-5 rounded-full flex items-center justify-center
-                ${isCompleted && !isFailedStep && !isCurrent ? 'bg-green-500 text-white' : ''}
-                ${isCurrent && !isFailedStep ? 'bg-primary-600 text-white animate-pulse' : ''}
+              <div className={`absolute -left-[25px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white
+                ${isCompleted && !isFailedStep && !isCurrent ? 'bg-primary-600 text-white' : ''}
+                ${isCurrent && !isFailedStep ? 'bg-primary-600 text-white animate-pulse shadow-md ring-4 ring-primary-100' : ''}
                 ${isFailedStep ? 'bg-red-500 text-white' : ''}
                 ${!isCompleted && !isCurrent ? 'bg-gray-200' : ''}
               `}>
@@ -68,8 +68,8 @@ const OrderTimeline = ({ order }) => {
                 {(isCurrent && !isFailedStep) ? <span className="w-2 h-2 bg-white rounded-full"></span> : null}
               </div>
               
-              <div className="pl-2">
-                <h4 className={`text-sm font-semibold ${isCurrent ? (isFailedStep ? 'text-red-600' : 'text-primary-600') : (isCompleted ? 'text-gray-900' : 'text-gray-400')}`}>
+              <div className="pl-4">
+                <h4 className={`text-sm font-bold ${isCurrent ? (isFailedStep ? 'text-red-600' : 'text-primary-600') : (isCompleted ? 'text-gray-900' : 'text-gray-400')}`}>
                   {getStepLabels(step)}
                 </h4>
                 {entry && <p className="text-xs text-gray-500">{formatTime(entry.timestamp)}</p>}

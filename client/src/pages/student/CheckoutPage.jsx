@@ -79,13 +79,13 @@ const CheckoutPage = () => {
   if (items.length === 0) return null;
 
   return (
-    <PageLayout title="Checkout">
+    <PageLayout title="Checkout" breadcrumb="Cart > Checkout">
       <div className="max-w-3xl mx-auto">
         <ProgressSteps steps={['Cart', 'Slot', 'Confirm']} currentStep={1} />
         
         <div className="mt-8 space-y-6">
-          <Card>
-            <h3 className="font-bold text-lg mb-4">Order Summary</h3>
+          <div className="card p-6">
+            <h3 className="font-bold text-lg mb-4 text-gray-800 border-b pb-2">Order Summary</h3>
             <div className="space-y-3 divide-y divide-gray-100">
               {items.map((item, idx) => (
                 <div key={idx} className="pt-3 first:pt-0 flex justify-between">
@@ -99,19 +99,19 @@ const CheckoutPage = () => {
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
 
-          <Card>
-            <h3 className="font-bold text-lg mb-4">Pickup Time</h3>
+          <div className="card p-6">
+            <h3 className="font-bold text-lg mb-4 text-gray-800 border-b pb-2">Pickup Time</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <button
                 onClick={() => setSelectedSlot(null)}
-                className={`p-3 rounded-lg border-2 text-center transition-colors ${
-                  selectedSlot === null ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-gray-200 hover:border-gray-300'
+                className={`p-3 rounded-lg border text-center transition-colors ${
+                  selectedSlot === null ? 'border-primary-600 bg-primary-50 text-primary-700 font-bold shadow-sm' : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <div className="font-medium">ASAP</div>
-                <div className="text-xs text-gray-500 mt-1">No specific slot</div>
+                <div>ASAP</div>
+                <div className="text-xs font-normal opacity-70 mt-1">No specific slot</div>
               </button>
               
               {slots.map(slot => {
@@ -123,39 +123,39 @@ const CheckoutPage = () => {
                     key={slot._id}
                     disabled={isFull}
                     onClick={() => setSelectedSlot(slot._id)}
-                    className={`p-3 rounded-lg border-2 text-center transition-colors ${
+                    className={`p-3 rounded-lg border text-center transition-colors ${
                       isFull ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50' :
-                      isSelected ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-gray-200 hover:border-gray-300'
+                      isSelected ? 'border-primary-600 bg-primary-50 text-primary-700 font-bold shadow-sm' : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <div className="font-medium">{formatIST(slot.startTime)}</div>
-                    <div className={`text-xs mt-1 ${isFull ? 'text-red-500' : 'text-gray-500'}`}>
+                    <div>{formatIST(slot.startTime)}</div>
+                    <div className={`text-xs font-normal mt-1 ${isFull ? 'text-red-500' : 'opacity-70'}`}>
                       {isFull ? 'Full' : `${slot.capacity - slot.currentOrders} spots`}
                     </div>
                   </button>
                 );
               })}
             </div>
-          </Card>
+          </div>
           
-          <Card>
-            <h3 className="font-bold text-lg mb-4">Payment</h3>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="card p-6">
+            <h3 className="font-bold text-lg mb-4 text-gray-800 border-b pb-2">Payment</h3>
+            <div className="bg-content rounded-lg p-4 flex items-center justify-between border border-gray-200">
               <span className="font-medium text-gray-900 flex items-center gap-2">
                 <span className="text-xl">💵</span> Pay at Counter
               </span>
               <span className="text-sm text-gray-500">Only cash/UPI at counter supported currently</span>
             </div>
-          </Card>
+          </div>
 
-          <Card className="bg-gray-50">
+          <div className="card p-6 bg-content border-none">
             <div className="flex justify-between items-center mb-2">
               <span className="text-gray-600">Subtotal</span>
               <span className="font-medium text-gray-900">₹{subtotal}</span>
             </div>
             <div className="flex justify-between items-center mb-6 pt-4 border-t border-gray-200">
               <span className="text-lg font-bold text-gray-900">Total</span>
-              <span className="text-2xl font-black text-primary-600">₹{subtotal}</span>
+              <span className="text-2xl font-bold text-primary-600">₹{subtotal}</span>
             </div>
             
             <Button 
@@ -166,7 +166,7 @@ const CheckoutPage = () => {
             >
               Place Order
             </Button>
-          </Card>
+          </div>
         </div>
       </div>
     </PageLayout>

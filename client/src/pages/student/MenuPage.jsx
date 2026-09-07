@@ -8,6 +8,7 @@ import FoodItemModal from '../../components/menu/FoodItemModal';
 import { menuService } from '../../services/menu.service';
 import { useApi } from '../../hooks/useApi';
 import { useSocket } from '../../hooks/useSocket';
+import Card from '../../components/ui/Card';
 
 const MenuPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -61,21 +62,25 @@ const MenuPage = () => {
   };
 
   return (
-    <PageLayout title="Menu" subtitle="Pre-order your favorite meals">
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="flex-1">
-          <SearchBar onSearch={setSearchQuery} />
+    <PageLayout title="Menu" breadcrumb="Menu">
+      <Card className="mb-6 p-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-center">
+          <div className="flex-1 w-full">
+            <SearchBar onSearch={setSearchQuery} />
+          </div>
+          <div className="flex items-center shrink-0 border-l border-gray-200 pl-4 h-10">
+            <VegFilter isVegOnly={isVegOnly} onChange={setIsVegOnly} />
+          </div>
         </div>
-        <div className="flex items-center bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
-          <VegFilter isVegOnly={isVegOnly} onChange={setIsVegOnly} />
-        </div>
-      </div>
+      </Card>
 
-      <CategoryTabs 
-        categories={categories} 
-        selectedCategory={selectedCategory} 
-        onSelect={setSelectedCategory} 
-      />
+      <div className="mb-6">
+        <CategoryTabs 
+          categories={categories} 
+          selectedCategory={selectedCategory} 
+          onSelect={setSelectedCategory} 
+        />
+      </div>
 
       <MenuGrid 
         items={items} 

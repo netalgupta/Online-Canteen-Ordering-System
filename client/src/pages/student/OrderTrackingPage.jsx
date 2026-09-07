@@ -95,7 +95,7 @@ const OrderTrackingPage = () => {
   const canCancel = ['placed', 'received'].includes(order.status);
 
   return (
-    <PageLayout>
+    <PageLayout title={`Order #${order?.orderNumber || 'Tracking'}`} breadcrumb="Orders > Track">
       {!isConnected && (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 text-sm rounded-lg mb-6 flex justify-center items-center gap-2">
           <span>⚠</span> Connection lost. Updates may be delayed.

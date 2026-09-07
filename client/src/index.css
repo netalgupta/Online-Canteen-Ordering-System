@@ -4,7 +4,26 @@
 
 @layer base {
   body { 
-    @apply bg-canteen-bg text-canteen-textPrimary font-sans antialiased; 
+    @apply bg-content text-gray-800 font-sans antialiased; 
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-white/80 hover:bg-sidebar-hover hover:text-white cursor-pointer transition-colors;
+  }
+  
+  .sidebar-item.active {
+    @apply bg-sidebar-hover text-white border-r-2 border-primary;
+  }
+  
+  .page-title {
+    @apply text-2xl font-bold text-gray-800;
+  }
+  
+  .card {
+    @apply bg-white rounded border border-gray-200 shadow-sm;
   }
 }
 

@@ -4,7 +4,7 @@ const Badge = ({ status, variant = 'status', text }) => {
   if (variant === 'veg') {
     const isVeg = text.toLowerCase() === 'veg';
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${isVeg ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${isVeg ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-green-500' : 'bg-red-500'}`}></span>
         {text}
       </span>
@@ -18,7 +18,7 @@ const Badge = ({ status, variant = 'status', text }) => {
       out_of_stock: 'bg-red-100 text-red-800'
     };
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] || colors.available}`}>
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${colors[status] || colors.available}`}>
         {text}
       </span>
     );
@@ -37,7 +37,7 @@ const Badge = ({ status, variant = 'status', text }) => {
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${statusColors[status] || 'bg-gray-100 text-gray-800'}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${statusColors[status] || 'bg-gray-100 text-gray-800'}`}>
       {text || status}
     </span>
   );

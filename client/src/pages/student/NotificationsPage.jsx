@@ -29,16 +29,15 @@ const NotificationsPage = () => {
   };
 
   return (
-    <PageLayout 
-      title="Notifications" 
-      actions={
-        unreadCount > 0 && (
-          <Button variant="secondary" size="sm" onClick={markAllRead}>
-            Mark all read
+    <PageLayout title="Notifications" breadcrumb="Home > Notifications">
+      <div className="flex justify-end mb-4">
+        {unreadCount > 0 && (
+          <Button variant="outline" size="sm" onClick={markAllRead}>
+            Mark all as read
           </Button>
-        )
-      }
-    >
+        )}
+      </div>
+
       {notifications.length === 0 ? (
         <EmptyState 
           icon={<Bell className="w-12 h-12 text-gray-300" />}
@@ -46,33 +45,35 @@ const NotificationsPage = () => {
           description="You don't have any new notifications."
         />
       ) : (
-        <div className="max-w-3xl mx-auto space-y-3">
-          {notifications.map(notif => (
-            <div 
-              key={notif._id}
-              onClick={() => handleNotificationClick(notif)}
-              className={`p-4 rounded-xl border transition-colors cursor-pointer flex gap-4 items-start ${
-                notif.isRead 
-                  ? 'bg-white border-gray-100 hover:bg-gray-50 text-gray-600' 
-                  : 'bg-primary-50/30 border-primary-200 border-l-4 border-l-primary-500 text-gray-900 shadow-sm'
-              }`}
-            >
-              <div className="mt-1 flex-shrink-0">
-                {getIcon(notif.type)}
+        <div className="card overflow-hidden">
+          <div className="divide-y divide-gray-100">
+            {notifications.map(notif => (
+              <div 
+                key={notif._id}
+                onClick={() => handleNotificationClick(notif)}
+                className={`p-4 transition-colors cursor-pointer flex gap-4 items-start ${
+                  notif.isRead 
+                    ? 'bg-white hover:bg-gray-50 text-gray-600' 
+                    : 'bg-amber-50 text-gray-900 border-l-4 border-l-amber-500'
+                }`}
+              >
+                <div className="mt-1 flex-shrink-0">
+                  {getIcon(notif.type)}
+                </div>
+                <div className="flex-1">
+                  <h4 className={`text-sm ${notif.isRead ? 'font-medium text-gray-700' : 'font-bold text-gray-900'}`}>
+                    {notif.title}
+                  </h4>
+                  <p className={`text-sm mt-0.5 ${notif.isRead ? 'text-gray-500' : 'text-gray-700'}`}>
+                    {notif.message}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2 font-medium">
+                    {formatRelative(notif.createdAt)}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h4 className={`text-sm ${notif.isRead ? 'font-medium text-gray-700' : 'font-bold text-gray-900'}`}>
-                  {notif.title}
-                </h4>
-                <p className={`text-sm mt-0.5 ${notif.isRead ? 'text-gray-500' : 'text-gray-700'}`}>
-                  {notif.message}
-                </p>
-                <p className="text-xs text-gray-400 mt-2 font-medium">
-                  {formatRelative(notif.createdAt)}
-                </p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </PageLayout>
