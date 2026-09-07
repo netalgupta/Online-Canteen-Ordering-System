@@ -39,7 +39,8 @@ const FoodItemModal = ({ item, isOpen, onClose }) => {
     onClose();
   };
 
-  const emoji = CATEGORY_EMOJIS[item.category] || CATEGORY_EMOJIS['default'];
+  const categoryName = typeof item.category === 'object' ? item.category?.name : item.category;
+  const emoji = CATEGORY_EMOJIS[categoryName] || CATEGORY_EMOJIS['default'];
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md" title="Item Details">
@@ -57,7 +58,7 @@ const FoodItemModal = ({ item, isOpen, onClose }) => {
             <h2 className="text-2xl font-bold text-gray-900">{item.name}</h2>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="veg" text={item.isVeg ? 'Veg' : 'Non-Veg'} />
-              <span className="text-sm text-gray-500">{item.category}</span>
+              <span className="text-sm text-gray-500">{categoryName}</span>
             </div>
           </div>
           <span className="text-2xl font-bold text-primary-600">₹{item.price}</span>

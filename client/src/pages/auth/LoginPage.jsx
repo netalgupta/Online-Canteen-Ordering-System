@@ -30,13 +30,31 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex min-h-screen flex-col bg-white md:flex-row">
       {/* Left Panel */}
-      <div className="hidden md:flex w-[55%] relative overflow-hidden bg-gradient-to-br from-[#8B1020] via-[#C41230] to-[#1E2433]">
-        <div className="absolute inset-0 bg-black/30"></div>
+      <div className="login-hero flex h-[310px] w-full flex-col relative overflow-hidden bg-[#8B1020] md:h-auto md:min-h-screen md:w-[55%]">
+        <img
+          className="login-hero-image"
+          src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1500&q=85"
+          alt="Warmly lit canteen dining area"
+        />
+        <div className="login-hero-wash"></div>
+        <div className="login-hero-grid"></div>
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-center text-white">
-          <h1 className="text-4xl font-bold mb-2">Siddhi Services Canteen</h1>
-          <p className="text-xl text-white/80 mb-12">Somaiya Vidyavihar University</p>
+          <div className="login-hero-copy">
+            <span className="login-hero-kicker">SOMAIYA VIDYAVIHAR UNIVERSITY</span>
+            <h1 className="text-4xl font-bold mb-2">Siddhi Services Canteen</h1>
+            <p className="text-xl text-white/80 mb-12">Good food, ready when you are.</p>
+          </div>
+
+          <div className="login-hero-note login-hero-note-one">
+            <span className="login-hero-dot"></span>
+            <span>Fresh from the counter</span>
+          </div>
+          <div className="login-hero-note login-hero-note-two">
+            <span className="login-hero-dot login-hero-dot-gold"></span>
+            <span>Made for campus days</span>
+          </div>
           
           <div className="mt-auto pt-12 border-t border-white/20 w-full flex justify-around text-center">
             <div>
@@ -52,7 +70,7 @@ const LoginPage = () => {
       </div>
 
       {/* Right Panel */}
-      <div className="w-full md:w-[45%] flex flex-col justify-center px-8 sm:px-16 py-10">
+      <div className="w-full flex-1 px-5 py-9 sm:px-16 md:w-[45%] md:flex-none md:flex md:flex-col md:justify-center md:py-10">
         <div className="w-full max-w-md mx-auto">
           {/* Logos Row */}
           <div className="flex flex-wrap items-center gap-2 mb-8 text-[10px] font-bold text-gray-700 tracking-wider">

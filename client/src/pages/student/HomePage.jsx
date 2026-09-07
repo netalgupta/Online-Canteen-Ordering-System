@@ -8,8 +8,6 @@ import FoodItemModal from '../../components/menu/FoodItemModal';
 import { useApi } from '../../hooks/useApi';
 import { menuService } from '../../services/menu.service';
 import { orderService } from '../../services/order.service';
-import { adminService } from '../../services/admin.service';
-import api from '../../services/api';
 import { HEAT_CONFIG, ACTIVE_STATUSES } from '../../utils/constants';
 import OrderStatusBadge from '../../components/orders/OrderStatusBadge';
 import { AlertCircle, Clock, ShoppingBag } from 'lucide-react';
@@ -27,10 +25,6 @@ const HomePage = () => {
   const { execute: fetchMyOrders } = useApi(orderService.getMyOrders);
 
   useEffect(() => {
-    api.get('/staff/queue/heat').then(res => setHeat(res.data.heat || 'low')).catch(console.error);
-    adminService.getSettings().then(data => {
-      setCanteenStatus({ isOpen: data.isKitchenOpen, closeTime: data.operatingHours?.close || '9:00 PM' });
-    }).catch(console.error);
     fetchPopular({ sort: 'popular', limit: 4 });
     fetchMyOrders().then(orders => {
       const active = orders.find(o => ACTIVE_STATUSES.includes(o.status));

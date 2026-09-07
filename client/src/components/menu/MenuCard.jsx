@@ -4,7 +4,8 @@ import { CATEGORY_EMOJIS } from '../../utils/constants';
 
 const MenuCard = ({ item, onClick, onAdd }) => {
   const isAvailable = item.availability === 'available';
-  const emoji = CATEGORY_EMOJIS[item.category] || CATEGORY_EMOJIS['default'];
+  const categoryName = typeof item.category === 'object' ? item.category?.name : item.category;
+  const emoji = CATEGORY_EMOJIS[categoryName] || CATEGORY_EMOJIS['default'];
 
   return (
     <div 
@@ -41,7 +42,7 @@ const MenuCard = ({ item, onClick, onAdd }) => {
           <h4 className="font-bold text-gray-800 text-base line-clamp-1">{item.name}</h4>
           <span className="font-bold text-primary-600">₹{item.price}</span>
         </div>
-        <p className="text-xs text-gray-400 mb-3 uppercase tracking-wider">{item.category}</p>
+        <p className="text-xs text-gray-400 mb-3 uppercase tracking-wider">{categoryName}</p>
         
         {/* Footer */}
         <div className="mt-auto flex items-center justify-between pt-3 border-t border-gray-100">

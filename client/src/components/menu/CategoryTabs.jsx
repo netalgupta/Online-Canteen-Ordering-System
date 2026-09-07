@@ -14,7 +14,7 @@ const CategoryTabs = ({ categories, selectedCategory, onSelect }) => {
         >
           All Items
         </button>
-        {categories.map((cat) => (
+        {(categories || []).map((cat) => (
           <button
             key={cat._id || cat.name}
             onClick={() => onSelect(cat.name)}

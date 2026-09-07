@@ -29,7 +29,7 @@ const foodItemsData = [
   // Hot Items
   { name: 'Tea', price: 10, prep: 3, isVeg: true, pop: true, catName: 'Hot Items' },
   { name: 'Coffee', price: 15, prep: 3, isVeg: true, pop: false, catName: 'Hot Items' },
-  { name: 'Tea Mix', price: 20, prep: 4, isVeg: true, pop: false, catName: 'Hot Items' },
+    { name: 'Vada Pav', price: 22, prep: 5, isVeg: true, pop: true, catName: 'Snacks' },
   { name: 'Chinese Vada Pav', price: 15, prep: 5, isVeg: true, pop: false, catName: 'Hot Items' },
   // Snacks
   { name: 'Vada Pav', price: 10, prep: 5, isVeg: true, pop: true, catName: 'Snacks' },
@@ -51,11 +51,10 @@ const foodItemsData = [
   { name: 'Veg Sandwich', price: 40, prep: 5, isVeg: true, pop: false, catName: 'Sandwiches' },
   { name: 'Plain Toast', price: 28, prep: 4, isVeg: true, pop: false, catName: 'Sandwiches' },
   { name: 'Veg Cheese Toast', price: 43, prep: 6, isVeg: true, pop: false, catName: 'Sandwiches' },
-  { name: 'Cheese Sandwich', price: 38, prep: 6, isVeg: true, pop: false, catName: 'Sandwiches' },
   { name: 'Club Sandwich', price: 63, prep: 8, isVeg: true, pop: true, catName: 'Sandwiches' },
   { name: 'Cheese Club Sandwich', price: 75, prep: 9, isVeg: true, pop: false, catName: 'Sandwiches' },
   { name: 'Only Cheese Toast Sandwich', price: 105, prep: 8, isVeg: true, pop: false, catName: 'Sandwiches' },
-  { name: 'Chalie Cheese Toast Sandwich', price: 116, prep: 10, isVeg: true, pop: false, catName: 'Sandwiches' },
+  { name: 'Charlie Cheese Toast Sandwich', price: 116, prep: 10, isVeg: true, pop: false, catName: 'Sandwiches' },
   // Dosa
   { name: 'Masala Dosa', price: 84, prep: 12, isVeg: true, pop: true, catName: 'Dosa' },
   { name: 'Butter Masala Dosa', price: 84, prep: 12, isVeg: true, pop: false, catName: 'Dosa' },
