@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order History — QueueLess</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .hist-list{padding:26px 0 60px; display:flex; flex-direction:column; gap:14px;}
+  .hist-row{display:flex; align-items:center; gap:16px; padding:18px; flex-wrap:wrap;}
+  .hist-id{font-family:var(--font-mono); font-weight:700; font-size:15px;}
+  .hist-items{font-size:13px; color:var(--ink-soft); margin-top:2px;}
+  .hist-date{font-size:11.5px; color:var(--ink-soft); font-family:var(--font-mono); margin-top:4px;}
+  .hist-right{margin-left:auto; display:flex; align-items:center; gap:12px;}
+  .hist-price{font-family:var(--font-mono); font-weight:700;}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="nav-links"><a href="dashboard.html">Home</a><a href="menu.html">Menu</a><a href="history.html" class="active">Orders</a><a href="profile.html">Profile</a></div>
+    <div class="nav-right"><a href="cart.html" class="cart-btn"><i data-lucide="shopping-bag" style="width:19px;height:19px;"></i><span class="cart-count">0</span></a></div>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 style="font-size:24px; margin-top:28px;">Order History</h1>
+  <div class="hist-list" id="hist-list"></div>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/orders.js"></script>
+<script src="../js/cart.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  function render(){
+    const orders = qlGetOrders().slice().sort((a,b)=>b.createdAt-a.createdAt);
+    const list = document.getElementById('hist-list');
+    const menu = qlGetMenu();
+
+    if(orders.length === 0){
+      list.innerHTML = `<div class="empty-state"><i data-lucide="receipt"></i><p>No orders yet.</p><a href="menu.html" class="btn btn-primary btn-sm mt-16">Browse Menu</a></div>`;
+      qlIcons();
+      return;
+    }
+
+    list.innerHTML = orders.map(o=>{
+      const itemsText = o.items.map(ci=>{
+        const m = menu.find(x=>x.id===ci.id);
+        return `${m?m.name:'Item'} ×${ci.qty}`;
+      }).join(', ');
+      const statusPill = o.status==='collected' ? 'pill-muted' : (o.status==='ready' ? 'pill-amber' : 'pill-teal');
+      return `
+      <div class="ticket hist-row">
+        <div>
+          <div class="hist-id">#${o.id}</div>
+          <div class="hist-items">${itemsText}</div>
+          <div class="hist-date">${new Date(o.createdAt).toLocaleDateString('en-IN', {day:'numeric', month:'short'})} · ${qlFormatTime(new Date(o.createdAt))}</div>
+        </div>
+        <div class="hist-right">
+          <span class="pill ${statusPill}"><span class="pill-dot"></span>${QL_STATUS_LABEL[o.status]}</span>
+          <span class="hist-price">₹${o.subtotal}</span>
+          ${o.status!=='collected' ? `<a href="track.html?id=${o.id}" class="btn btn-outline btn-sm">Track</a>` : `<button class="btn btn-primary btn-sm reorder-btn" data-id="${o.id}">Reorder</button>`}
+        </div>
+      </div>`;
+    }).join('');
+    qlIcons();
+
+    list.querySelectorAll('.reorder-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const order = orders.find(o=>o.id===btn.dataset.id);
+        order.items.forEach(ci=> qlAddToCart(ci.id, ci.qty, ci.instructions));
+        qlToast('Items added to cart');
+        qlUpdateCartBadge();
+      });
+    });
+  }
+  render();
+</script>
+</body>
+</html>

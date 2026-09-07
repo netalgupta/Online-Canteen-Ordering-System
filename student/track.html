@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Order — QueueLess</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .track-wrap{max-width:640px; margin:0 auto; padding:32px 0 60px;}
+  .track-head{text-align:center; margin-bottom:30px;}
+  .track-head .id{font-family:var(--font-mono); font-size:13px; color:var(--ink-soft);}
+  .track-head h1{font-size:26px; margin-top:4px;}
+
+  .timeline{position:relative; padding-left:34px; margin:30px 0;}
+  .tl-item{position:relative; padding-bottom:30px;}
+  .tl-item:last-child{padding-bottom:0;}
+  .tl-dot{position:absolute; left:-34px; top:0; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--paper-dim); border:2px solid var(--line);}
+  .tl-dot svg{width:13px; height:13px;}
+  .tl-item.done .tl-dot{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .tl-item.current .tl-dot{background:var(--amber); border-color:var(--amber); color:#fff; animation:pulse-ring 1.6s infinite;}
+  @keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(255,107,53,.4);} 70%{box-shadow:0 0 0 8px rgba(255,107,53,0);} 100%{box-shadow:0 0 0 0 rgba(255,107,53,0);}}
+  .tl-line{position:absolute; left:-23px; top:24px; bottom:-6px; width:2px; background:var(--line);}
+  .tl-item.done .tl-line{background:var(--teal);}
+  .tl-item:last-child .tl-line{display:none;}
+  .tl-label{font-weight:600; font-size:14.5px;}
+  .tl-item.done .tl-label, .tl-item.current .tl-label{color:var(--ink);}
+  .tl-item:not(.done):not(.current) .tl-label{color:var(--ink-soft);}
+  .tl-time{font-size:12px; color:var(--ink-soft); font-family:var(--font-mono); margin-top:2px;}
+
+  .meta-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:26px 0;}
+  .meta-box{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:16px;}
+  .meta-box .l{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);}
+  .meta-box .v{font-family:var(--font-mono); font-weight:700; font-size:19px; margin-top:6px;}
+
+  .kitchen-box{background:var(--ink); color:var(--paper); border-radius:var(--radius-l); padding:22px; margin-top:8px;}
+  .kitchen-box h3{font-size:14.5px; margin-bottom:4px;}
+  .kitchen-box .demand{font-size:12.5px; color:rgba(248,247,243,.6); margin-bottom:14px;}
+  .kitchen-box .progress{background:rgba(248,247,243,.15);}
+  .kb-row{display:flex; justify-content:space-between; margin-top:12px; font-size:13px;}
+  .kb-row .v{font-family:var(--font-mono); font-weight:700;}
+  .kb-explain{font-size:12px; color:rgba(248,247,243,.55); margin-top:14px;}
+
+  .ready-banner{background:var(--amber); color:#fff; text-align:center; padding:18px; border-radius:var(--radius-m); margin-bottom:22px; font-weight:600;}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="nav-links"><a href="dashboard.html">Home</a><a href="menu.html">Menu</a><a href="history.html">Orders</a></div>
+    <div></div>
+  </div>
+</nav>
+
+<div class="container track-wrap" id="track-wrap"></div>
+
+<script src="../js/data.js"></script>
+<script src="../js/orders.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  const id = new URLSearchParams(window.location.search).get('id');
+  const STEPS = ['received','accepted','preparing','ready','collected'];
+  let lastStatus = null;
+
+  function render(){
+    const order = qlGetOrder(id);
+    const wrap = document.getElementById('track-wrap');
+    if(!order){
+      wrap.innerHTML = `<div class="empty-state"><p>Order not found.</p><a href="dashboard.html" class="btn btn-primary btn-sm mt-16">Go Home</a></div>`;
+      return;
+    }
+
+    if(lastStatus && lastStatus !== order.status && order.status === 'ready'){
+      qlToast(`Order ${order.id} is ready for pickup!`);
+    }
+    lastStatus = order.status;
+
+    const curIdx = STEPS.indexOf(order.status);
+    const qPos = qlQueuePosition(order.id);
+    const workload = qlKitchenWorkload();
+    const highDemand = workload.pct >= 65;
+    const extraDelay = highDemand ? Math.round(workload.pct/20) : 0;
+
+    const timelineHTML = STEPS.map((s,i)=>{
+      const done = i < curIdx || order.status==='collected';
+      const current = i === curIdx && order.status!=='collected';
+      const histEntry = order.history.find(h=>h.status===s);
+      return `
+      <div class="tl-item ${done?'done':''} ${current?'current':''}">
+        <div class="tl-line"></div>
+        <div class="tl-dot">${done ? '<i data-lucide=\"check\"></i>' : (current ? '<i data-lucide=\"loader\"></i>' : '')}</div>
+        <div class="tl-label">${QL_STATUS_LABEL[s]}</div>
+        ${histEntry ? `<div class="tl-time">${qlFormatTime(new Date(histEntry.at))}</div>` : (current ? `<div class="tl-time">In progress...</div>` : '')}
+      </div>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      ${order.status==='ready' ? `<div class="ready-banner"><i data-lucide="party-popper" style="vertical-align:-3px;width:16px;height:16px;"></i> Your order is ready for pickup!</div>` : ''}
+      <div class="track-head">
+        <div class="id">ORDER #${order.id} · TOKEN ${order.token}</div>
+        <h1>${QL_STATUS_LABEL[order.status]}</h1>
+      </div>
+
+      <div class="meta-grid">
+        <div class="meta-box"><div class="l">Estimated Ready</div><div class="v">${order.pickupTime}</div></div>
+        <div class="meta-box"><div class="l">Queue Position</div><div class="v">${order.status==='ready'||order.status==='collected' ? '—' : qPos + ' ahead'}</div></div>
+      </div>
+
+      <div class="card card-pad">
+        <div class="timeline">${timelineHTML}</div>
+      </div>
+
+      <div class="kitchen-box">
+        <h3>Kitchen Status</h3>
+        <div class="demand">${highDemand ? 'High demand right now' : 'Normal demand'}</div>
+        <div class="progress"><div class="progress-fill" style="width:${workload.pct}%"></div></div>
+        <div class="kb-row"><span>Kitchen Load</span><span class="v">${workload.pct}%</span></div>
+        ${highDemand ? `<div class="kb-row"><span>Estimated additional delay</span><span class="v">+${extraDelay} min</span></div>` : ''}
+        <div class="kb-explain">The estimate is based on active orders and current preparation workload.</div>
+      </div>
+
+      <a href="order.html?id=${order.id}" class="btn btn-outline btn-block mt-24">View Pickup Token</a>
+    `;
+    qlIcons();
+  }
+
+  render();
+  setInterval(render, 3000); // poll localStorage to reflect staff-side updates
+</script>
+</body>
+</html>

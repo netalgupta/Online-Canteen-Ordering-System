@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — QueueLess</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .profile-wrap{max-width:480px; margin:0 auto; padding:34px 0 60px;}
+  .profile-head{text-align:center; margin-bottom:26px;}
+  .profile-avatar{width:74px; height:74px; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; font-family:var(--font-display); margin:0 auto 12px;}
+  .stat-row{display:flex; gap:12px; margin:22px 0;}
+  .stat-box{flex:1; background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:16px; text-align:center;}
+  .stat-box .v{font-family:var(--font-display); font-size:22px; font-weight:700;}
+  .stat-box .l{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="nav-links"><a href="dashboard.html">Home</a><a href="menu.html">Menu</a><a href="history.html">Orders</a><a href="profile.html" class="active">Profile</a></div>
+    <div></div>
+  </div>
+</nav>
+
+<div class="container profile-wrap">
+  <div class="profile-head">
+    <div class="profile-avatar" id="pf-avatar">A</div>
+    <h1 style="font-size:20px;" id="pf-name">Student</h1>
+    <p class="muted text-sm" id="pf-email">—</p>
+  </div>
+
+  <div class="stat-row" id="pf-stats"></div>
+
+  <div class="card card-pad">
+    <h3 style="font-size:15px; margin-bottom:14px;">Account Details</h3>
+    <div class="field"><label>Full name</label><input type="text" id="edit-name"></div>
+    <div class="field"><label>College email</label><input type="email" id="edit-email"></div>
+    <div class="field"><label>Phone</label><input type="tel" id="edit-phone" placeholder="Optional"></div>
+    <button class="btn btn-primary btn-block" id="save-btn">Save Changes</button>
+  </div>
+
+  <a href="../login.html" class="btn btn-outline btn-block mt-16" id="logout-btn">Log Out</a>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/orders.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  const user = qlGetUser();
+  document.getElementById('pf-name').textContent = user.name || 'Student';
+  document.getElementById('pf-email').textContent = user.email || '—';
+  document.getElementById('pf-avatar').textContent = (user.name||'S').charAt(0).toUpperCase();
+  document.getElementById('edit-name').value = user.name || '';
+  document.getElementById('edit-email').value = user.email || '';
+  document.getElementById('edit-phone').value = user.phone || '';
+
+  const orders = qlGetOrders();
+  document.getElementById('pf-stats').innerHTML = `
+    <div class="stat-box"><div class="v">${orders.length}</div><div class="l">Total Orders</div></div>
+    <div class="stat-box"><div class="v">${orders.filter(o=>o.status==='collected').length}</div><div class="l">Collected</div></div>
+    <div class="stat-box"><div class="v">₹${orders.reduce((s,o)=>s+o.subtotal,0)}</div><div class="l">Total Spent</div></div>
+  `;
+
+  document.getElementById('save-btn').addEventListener('click', ()=>{
+    const updated = {
+      name: document.getElementById('edit-name').value,
+      email: document.getElementById('edit-email').value,
+      phone: document.getElementById('edit-phone').value
+    };
+    localStorage.setItem('ql_user', JSON.stringify(updated));
+    qlToast('Profile updated');
+    document.getElementById('pf-name').textContent = updated.name;
+    document.getElementById('pf-email').textContent = updated.email;
+    document.getElementById('pf-avatar').textContent = (updated.name||'S').charAt(0).toUpperCase();
+  });
+</script>
+</body>
+</html>

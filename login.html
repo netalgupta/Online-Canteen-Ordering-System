@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in — QueueLess</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .auth-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .auth-card{width:100%; max-width:400px;}
+  .auth-brand{display:flex; align-items:center; gap:9px; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:20px; margin-bottom:26px;}
+  .auth-card .card{padding:32px;}
+  .auth-card h1{font-size:22px; margin-bottom:6px;}
+  .auth-card p.sub{color:var(--ink-soft); font-size:13.5px; margin-bottom:24px;}
+  .auth-foot{text-align:center; margin-top:20px; font-size:13.5px; color:var(--ink-soft);}
+  .auth-foot a{color:var(--amber); font-weight:600;}
+  .forgot-link{display:block; text-align:right; font-size:12.5px; color:var(--amber); font-weight:600; margin-top:-6px; margin-bottom:16px;}
+  .oauth-btn{display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:12px; border:1.5px solid var(--line); border-radius:999px; background:var(--white); font-weight:600; font-size:14px; color:var(--ink);}
+  .oauth-btn:hover{border-color:var(--ink-soft);}
+  .oauth-btn img{width:18px; height:18px;}
+  .divider{display:flex; align-items:center; gap:12px; margin:18px 0; color:var(--ink-soft); font-size:12px;}
+  .divider::before, .divider::after{content:''; flex:1; height:1px; background:var(--line);}
+  .form-error{background:var(--red-tint); color:var(--red); font-size:13px; padding:10px 14px; border-radius:var(--radius-s); margin-bottom:16px; display:none;}
+  .form-error.show{display:block;}
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <a href="/index.html" class="auth-brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="card">
+      <h1>Welcome back</h1>
+      <p class="sub">Log in to pre-order, track and collect.</p>
+
+      <div class="form-error" id="err"></div>
+
+      <button type="button" class="oauth-btn" id="google-btn">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt=""> Continue with Google
+      </button>
+
+      <div class="divider">or</div>
+
+      <form id="login-form">
+        <div class="field">
+          <label>College email</label>
+          <input type="email" id="email" placeholder="arya@somaiya.edu" required>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="••••••••" required>
+        </div>
+        <a href="/forgot-password.html" class="forgot-link">Forgot password?</a>
+        <button type="submit" class="btn btn-primary btn-block" id="submit-btn">Log In <i data-lucide="arrow-right"></i></button>
+      </form>
+    </div>
+    <p class="auth-foot">New to QueueLess? <a href="/register.html">Create an account</a></p>
+  </div>
+</div>
+
+<script type="module" src="/js/pages/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — QueueLess</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/dashboard.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+
+<div class="dash-shell">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <nav class="dash-nav">
+      <a href="dashboard.html" class="active"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <a href="menu.html"><i data-lucide="utensils"></i> Menu Management</a>
+      <a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a>
+    </nav>
+    <div class="dash-sidebar-foot">Logged in as Admin<br><a href="../login.html" style="color:rgba(248,247,243,.7);">Log out</a></div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 style="font-size:20px;">Admin Dashboard</h1>
+        <p class="text-sm muted">Overview of canteen performance</p>
+      </div>
+      <span class="role-badge">Admin</span>
+    </div>
+
+    <div class="dash-content">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Today's Orders</div><div class="kpi-value" id="kpi-orders">—</div><div class="kpi-sub up">↑ 8.2% vs yesterday</div></div>
+        <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="kpi-value" id="kpi-revenue">—</div><div class="kpi-sub up">↑ 5.1% vs yesterday</div></div>
+        <div class="kpi-card"><div class="kpi-label">Average Wait</div><div class="kpi-value" id="kpi-wait">—</div><div class="kpi-sub down">↓ 2 min vs last week</div></div>
+        <div class="kpi-card"><div class="kpi-label">Peak Hour</div><div class="kpi-value" style="font-size:20px;" id="kpi-peak">—</div><div class="kpi-sub">Highest order volume</div></div>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:22px; grid-template-columns:1.4fr 1fr;">
+        <div class="chart-panel">
+          <h3>Orders by Hour</h3>
+          <canvas id="hourChart" height="140"></canvas>
+        </div>
+        <div class="chart-panel">
+          <h3>Most Popular Items</h3>
+          <div id="popular-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/admin.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  const stats = qlAdminStats();
+  document.getElementById('kpi-orders').textContent = stats.todaysOrders.toLocaleString('en-IN');
+  document.getElementById('kpi-revenue').textContent = '₹' + stats.revenue.toLocaleString('en-IN');
+  document.getElementById('kpi-wait').textContent = stats.avgWait + ' min';
+  document.getElementById('kpi-peak').textContent = stats.peakHour;
+
+  new Chart(document.getElementById('hourChart'), {
+    type:'bar',
+    data:{
+      labels: QL_ADMIN_BASELINE.ordersByHour.map(x=>x.h),
+      datasets:[{ data: QL_ADMIN_BASELINE.ordersByHour.map(x=>x.v), backgroundColor:'#FF6B35', borderRadius:6, maxBarThickness:34 }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{ y:{beginAtZero:true, grid:{color:'#EFEDE6'}}, x:{grid:{display:false}} }
+    }
+  });
+
+  document.getElementById('popular-list').innerHTML = QL_ADMIN_BASELINE.popular.map((p,i)=>`
+    <div class="flex between center" style="padding:10px 0; border-bottom:1px solid var(--line);">
+      <span class="text-sm"><span class="mono muted">${i+1}.</span> ${p.name}</span>
+      <span class="mono text-sm" style="font-weight:700;">${p.orders}</span>
+    </div>`).join('');
+</script>
+</body>
+</html>

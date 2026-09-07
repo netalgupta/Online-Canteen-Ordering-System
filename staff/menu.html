@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu Availability — QueueLess Staff</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/dashboard.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+
+<div class="dash-shell">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <nav class="dash-nav">
+      <a href="dashboard.html"><i data-lucide="layout-grid"></i> Orders</a>
+      <a href="menu.html" class="active"><i data-lucide="utensils"></i> Menu Availability</a>
+    </nav>
+    <div class="dash-sidebar-foot">Logged in as Kitchen Staff<br><a href="../login.html" style="color:rgba(248,247,243,.7);">Log out</a></div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 style="font-size:20px;">Menu Availability</h1>
+        <p class="text-sm muted">Toggle items on/off and adjust prep times in real time</p>
+      </div>
+      <span class="role-badge">Staff</span>
+    </div>
+
+    <div class="dash-content">
+      <div class="card" style="overflow-x:auto;">
+        <table class="menu-table">
+          <thead>
+            <tr><th></th><th>Item</th><th>Category</th><th>Price</th><th>Prep Time</th><th>Available</th></tr>
+          </thead>
+          <tbody id="menu-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  function render(){
+    const menu = qlGetMenu();
+    document.getElementById('menu-tbody').innerHTML = menu.map(item=>`
+      <tr data-id="${item.id}">
+        <td><img class="mini-thumb" src="${item.img}" alt=""></td>
+        <td>${item.name}</td>
+        <td class="muted text-sm">${item.category}</td>
+        <td class="mono">₹${item.price}</td>
+        <td><input type="number" class="prep-input" value="${item.prepTime}" min="1" style="width:60px; padding:6px 8px; border:1.5px solid var(--line); border-radius:6px; font-family:var(--font-mono);"> min</td>
+        <td><div class="toggle ${item.available?'on':''}"></div></td>
+      </tr>`).join('');
+    qlIcons();
+
+    document.querySelectorAll('.toggle').forEach(t=>{
+      t.addEventListener('click', ()=>{
+        const id = t.closest('tr').dataset.id;
+        const menu = qlGetMenu();
+        const item = menu.find(m=>m.id===id);
+        item.available = !item.available;
+        qlSaveMenu(menu);
+        t.classList.toggle('on');
+        qlToast(`${item.name} marked ${item.available?'available':'unavailable'}`);
+      });
+    });
+
+    document.querySelectorAll('.prep-input').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const id = inp.closest('tr').dataset.id;
+        const menu = qlGetMenu();
+        const item = menu.find(m=>m.id===id);
+        item.prepTime = parseInt(inp.value) || item.prepTime;
+        qlSaveMenu(menu);
+        qlToast(`${item.name} prep time updated`);
+      });
+    });
+  }
+  render();
+</script>
+</body>
+</html>

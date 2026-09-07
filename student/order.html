@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Confirmed — QueueLess</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .confirm-wrap{min-height:calc(100vh - 65px); display:flex; align-items:center; justify-content:center; padding:40px 20px;}
+  .confirm-card{width:100%; max-width:440px; text-align:center;}
+  .confirm-check{width:56px; height:56px; border-radius:50%; background:var(--teal-tint); color:var(--teal); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;}
+  .confirm-card h1{font-size:24px; margin-bottom:4px;}
+  .confirm-card p.sub{color:var(--ink-soft); font-size:13.5px; margin-bottom:26px;}
+  .order-id-tag{font-family:var(--font-mono); font-size:14px; font-weight:700; background:var(--paper-dim); display:inline-block; padding:6px 16px; border-radius:999px; margin-bottom:22px;}
+  .token-label{font-size:12px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:12px;}
+  .qr-box{width:150px; height:150px; margin:22px auto; border-radius:var(--radius-m); background:
+      repeating-linear-gradient(45deg, var(--ink) 0 6px, transparent 6px 12px),
+      repeating-linear-gradient(-45deg, var(--ink) 0 6px, transparent 6px 12px);
+      background-blend-mode:multiply; background-color:#fff; border:1.5px solid var(--line); position:relative;}
+  .qr-box::before{content:''; position:absolute; inset:14px; background:#fff; border-radius:6px;}
+  .qr-box::after{content:'QR'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; color:var(--ink); font-size:13px;}
+  .confirm-meta{display:flex; justify-content:space-around; margin:22px 0; text-align:center;}
+  .confirm-meta .l{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);}
+  .confirm-meta .v{font-family:var(--font-mono); font-weight:700; font-size:16px; margin-top:4px;}
+  .notify-note{background:var(--amber-tint); color:var(--amber-dark); font-size:13px; padding:12px 16px; border-radius:var(--radius-s); margin-top:22px; display:flex; align-items:center; gap:8px; justify-content:center;}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div></div>
+    <div></div>
+  </div>
+</nav>
+
+<div class="confirm-wrap">
+  <div class="confirm-card" id="confirm-card"></div>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/orders.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  const id = new URLSearchParams(window.location.search).get('id');
+  const order = qlGetOrder(id);
+  const card = document.getElementById('confirm-card');
+
+  if(!order){
+    card.innerHTML = `<div class="empty-state"><p>Order not found.</p><a href="dashboard.html" class="btn btn-primary btn-sm mt-16">Go Home</a></div>`;
+  } else {
+    const qPos = qlQueuePosition(order.id);
+    const tokenDigits = order.token.padStart(3,'0').split('');
+    card.innerHTML = `
+      <div class="confirm-check"><i data-lucide="check" style="width:26px;height:26px;"></i></div>
+      <h1>Order Confirmed</h1>
+      <p class="sub">We've sent this to the kitchen.</p>
+      <div class="order-id-tag">ORDER #${order.id}</div>
+
+      <div class="token-label">Pickup Token</div>
+      <div class="flap-row" style="justify-content:center;">
+        ${tokenDigits.map(d=>`<div class="flap flap-lg">${d}</div>`).join('')}
+      </div>
+
+      <div class="qr-box"></div>
+      <p class="text-xs muted">Show this QR code or pickup token when collecting your order.</p>
+
+      <div class="confirm-meta">
+        <div><div class="l">Ready By</div><div class="v">${order.pickupTime}</div></div>
+        <div><div class="l">Queue Position</div><div class="v">${qPos}</div></div>
+      </div>
+
+      <a href="track.html?id=${order.id}" class="btn btn-amber btn-block">Track My Order <i data-lucide="arrow-right"></i></a>
+
+      <div class="notify-note"><i data-lucide="bell" style="width:14px;height:14px;"></i> We'll notify you when your order is ready.</div>
+    `;
+    qlIcons();
+  }
+</script>
+</body>
+</html>

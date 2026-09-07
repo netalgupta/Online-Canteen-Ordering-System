@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QueueLess — Skip the Queue. Pick Up When It's Ready.</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .hero{padding:70px 0 40px; display:grid; grid-template-columns:1.1fr 0.9fr; gap:50px; align-items:center;}
+  .hero-eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); background:var(--white); border:1px solid var(--line); padding:6px 12px; border-radius:999px; margin-bottom:22px;}
+  .hero h1{font-size:52px; line-height:1.06; margin-bottom:18px;}
+  .hero h1 span{color:var(--amber);}
+  .hero p.lead{font-size:17px; color:var(--ink-soft); max-width:480px; margin-bottom:30px;}
+  .hero-actions{display:flex; gap:14px;}
+
+  .hero-visual{background:var(--band-grad); border-radius:var(--radius-l); padding:28px; color:#fff; position:relative; overflow:hidden;}
+  .hero-visual::before{content:''; position:absolute; inset:0; background:radial-gradient(circle at 85% -10%, rgba(255,255,255,.14), transparent 55%);}
+  .board-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; position:relative;}
+  .board-head .lbl{font-family:var(--font-mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:rgba(248,247,243,.55);}
+  .board-status{font-family:var(--font-mono); font-size:11.5px; color:var(--amber); display:flex; align-items:center; gap:6px;}
+  .board-status .dot{width:6px; height:6px; border-radius:50%; background:var(--amber); animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.3;}}
+  .token-block{text-align:center; padding:22px 0; position:relative;}
+  .token-label{font-family:var(--font-mono); font-size:12px; color:rgba(248,247,243,.55); margin-bottom:12px; letter-spacing:.05em;}
+  .board-row{display:flex; justify-content:space-between; padding:13px 0; border-top:1px solid rgba(248,247,243,.12); font-size:13.5px; position:relative;}
+  .board-row .k{color:rgba(248,247,243,.6);}
+  .board-row .v{font-family:var(--font-mono); font-weight:600;}
+
+  .problem-solution{display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:20px;}
+  .ps-card{border-radius:var(--radius-l); padding:30px;}
+  .ps-card.problem{background:var(--white); border:1px solid var(--line);}
+  .ps-card.solution{background:var(--band-grad); color:#fff;}
+  .ps-card h3{font-size:20px; margin-bottom:18px;}
+  .ps-list li{display:flex; gap:10px; padding:9px 0; font-size:14.5px; border-top:1px solid var(--line);}
+  .ps-card.solution .ps-list li{border-top-color:rgba(248,247,243,.12); color:rgba(248,247,243,.85);}
+  .ps-list li:first-child{border-top:none;}
+  .flow-strip{display:flex; align-items:center; gap:8px; margin-top:22px; flex-wrap:wrap; font-family:var(--font-mono); font-size:13px;}
+  .flow-strip .step{background:rgba(248,247,243,.08); padding:8px 13px; border-radius:999px;}
+  .flow-strip svg{width:14px; height:14px; opacity:.5;}
+
+  .steps-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-top:36px;}
+  .step-card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:24px;}
+  .step-num{font-family:var(--font-mono); font-size:13px; color:var(--amber); font-weight:700; margin-bottom:14px;}
+  .step-card h4{font-size:17px; margin-bottom:8px;}
+  .step-card p{font-size:13.5px; color:var(--ink-soft);}
+
+  .stats-strip{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border-radius:var(--radius-m); overflow:hidden; margin-top:20px; border:1px solid var(--line);}
+  .stat-cell{background:var(--white); padding:26px 22px;}
+  .stat-cell .n{font-family:var(--font-display); font-size:26px; font-weight:700;}
+  .stat-cell .l{font-size:12.5px; color:var(--ink-soft); margin-top:4px;}
+
+  .final-cta{background:var(--band-grad); border-radius:var(--radius-l); padding:50px; text-align:center; margin-top:60px;}
+  .final-cta h2{font-size:32px; margin-bottom:12px; color:#fff;}
+  .final-cta p{color:rgba(255,255,255,.85); margin-bottom:24px;}
+  .final-cta .btn-primary{background:#fff; color:var(--band);}
+  .final-cta .btn-primary:hover{background:#fff; opacity:.92;}
+
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr; padding-top:40px;}
+    .hero h1{font-size:38px;}
+    .problem-solution{grid-template-columns:1fr;}
+    .steps-grid{grid-template-columns:1fr 1fr;}
+    .stats-strip{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="nav-links">
+      <a href="index.html#how">How it works</a>
+      <a href="index.html#why">Why QueueLess</a>
+    </div>
+    <div class="nav-right">
+      <a href="login.html" class="btn btn-outline btn-sm">Log in</a>
+      <a href="register.html" class="btn btn-primary btn-sm">Order Now</a>
+    </div>
+  </div>
+</nav>
+
+<header class="container hero">
+  <div>
+    <div class="hero-eyebrow"><i data-lucide="utensils-crossed" style="width:13px;height:13px;"></i> Campus canteen, reimagined</div>
+    <h1>Skip the Queue.<br>Pick Up <span>When It's Ready.</span></h1>
+    <p class="lead">Pre-order your canteen food from anywhere on campus, track preparation in real time, and collect it using your digital pickup token.</p>
+    <div class="hero-actions">
+      <a href="register.html" class="btn btn-amber">Order Now <i data-lucide="arrow-right"></i></a>
+      <a href="#how" class="btn btn-outline">How It Works</a>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="board-head">
+      <span class="lbl">Live Order</span>
+      <span class="board-status"><span class="dot"></span>Preparing</span>
+    </div>
+    <div class="token-block">
+      <div class="token-label">Pickup Token</div>
+      <div class="flap-row" style="justify-content:center;">
+        <div class="flap flap-lg">2</div>
+        <div class="flap flap-lg">4</div>
+        <div class="flap flap-lg">7</div>
+      </div>
+    </div>
+    <div class="board-row"><span class="k">Estimated Ready</span><span class="v">1:18 PM</span></div>
+    <div class="board-row"><span class="k">Queue Position</span><span class="v">4 ahead</span></div>
+    <div class="board-row"><span class="k">Pickup Location</span><span class="v">Main Canteen</span></div>
+  </div>
+</header>
+
+<section class="container section" id="why">
+  <h2 style="font-size:30px;">Why QueueLess?</h2>
+  <p class="muted" style="max-width:560px; margin-top:8px;">We're not eliminating the kitchen's preparation time. We're eliminating the unnecessary physical waiting — and making the rest predictable.</p>
+
+  <div class="problem-solution">
+    <div class="ps-card problem">
+      <h3>The problem, today</h3>
+      <ul class="ps-list">
+        <li><i data-lucide="x" style="width:15px;height:15px;color:var(--red);flex-shrink:0;margin-top:2px;"></i>Long physical queues at the counter</li>
+        <li><i data-lucide="x" style="width:15px;height:15px;color:var(--red);flex-shrink:0;margin-top:2px;"></i>Limited order-taking staff during rush hour</li>
+        <li><i data-lucide="x" style="width:15px;height:15px;color:var(--red);flex-shrink:0;margin-top:2px;"></i>Fixed kitchen capacity, unpredictable wait</li>
+        <li><i data-lucide="x" style="width:15px;height:15px;color:var(--red);flex-shrink:0;margin-top:2px;"></i>Crowding and congestion during lunch</li>
+        <li><i data-lucide="x" style="width:15px;height:15px;color:var(--red);flex-shrink:0;margin-top:2px;"></i>Students losing class or free time just standing around</li>
+      </ul>
+    </div>
+    <div class="ps-card solution">
+      <h3>The QueueLess flow</h3>
+      <div class="flow-strip">
+        <span class="step">Order remotely</span>
+        <i data-lucide="chevron-right"></i>
+        <span class="step">Track preparation</span>
+        <i data-lucide="chevron-right"></i>
+        <span class="step">Arrive when ready</span>
+        <i data-lucide="chevron-right"></i>
+        <span class="step">Verify token</span>
+        <i data-lucide="chevron-right"></i>
+        <span class="step">Collect</span>
+      </div>
+      <ul class="ps-list" style="margin-top:18px;">
+        <li><i data-lucide="check" style="width:15px;height:15px;color:var(--amber);flex-shrink:0;margin-top:2px;"></i>See real preparation time before you order</li>
+        <li><i data-lucide="check" style="width:15px;height:15px;color:var(--amber);flex-shrink:0;margin-top:2px;"></i>Choose a pickup window that fits your schedule</li>
+        <li><i data-lucide="check" style="width:15px;height:15px;color:var(--amber);flex-shrink:0;margin-top:2px;"></i>Live queue position and kitchen load</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="stats-strip">
+    <div class="stat-cell"><div class="n">Zero</div><div class="l">physical waiting to place an order</div></div>
+    <div class="stat-cell"><div class="n">Live</div><div class="l">kitchen coordination &amp; workload view</div></div>
+    <div class="stat-cell"><div class="n">Real-time</div><div class="l">order tracking, start to pickup</div></div>
+    <div class="stat-cell"><div class="n">Digital</div><div class="l">token verification at the counter</div></div>
+  </div>
+</section>
+
+<section class="container section" id="how">
+  <h2 style="font-size:30px;">How it works</h2>
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-num">01 — Choose</div>
+      <h4>Browse the menu</h4>
+      <p>See what's available right now, with prep time shown on every item.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02 — Pre-order</div>
+      <h4>Place your order</h4>
+      <p>Pick a pickup window that works around your class schedule.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03 — Track</div>
+      <h4>Watch it happen</h4>
+      <p>Live status, queue position and kitchen load, right on your phone.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04 — Collect</div>
+      <h4>Walk in when ready</h4>
+      <p>Get notified, show your token at the counter, and you're done.</p>
+    </div>
+  </div>
+
+  <div class="final-cta">
+    <h2>Ready to skip the queue?</h2>
+    <p>Set up your account in under a minute.</p>
+    <a href="register.html" class="btn btn-primary">Get Started <i data-lucide="arrow-right"></i></a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>QueueLess — Smart Canteen Pre-Ordering &amp; Queue Management</span>
+    <span>College project prototype</span>
+  </div>
+</footer>
+
+<script type="module" src="/js/landing.js"></script>
+</body>
+</html>

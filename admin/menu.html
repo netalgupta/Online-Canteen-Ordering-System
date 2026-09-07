@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu Management — QueueLess Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/dashboard.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .add-form-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; align-items:end;}
+</style>
+</head>
+<body>
+
+<div class="dash-shell">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <nav class="dash-nav">
+      <a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <a href="menu.html" class="active"><i data-lucide="utensils"></i> Menu Management</a>
+      <a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a>
+    </nav>
+    <div class="dash-sidebar-foot">Logged in as Admin<br><a href="../login.html" style="color:rgba(248,247,243,.7);">Log out</a></div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 style="font-size:20px;">Menu Management</h1>
+        <p class="text-sm muted">Add, edit, price and staff the canteen's catalog</p>
+      </div>
+      <span class="role-badge">Admin</span>
+    </div>
+
+    <div class="dash-content">
+      <div class="card card-pad mb-24">
+        <h3 style="font-size:15px; margin-bottom:14px;">Add New Item</h3>
+        <div class="add-form-grid">
+          <div class="field" style="margin-bottom:0;"><label>Name</label><input id="new-name" placeholder="e.g. Idli Sambar"></div>
+          <div class="field" style="margin-bottom:0;"><label>Category</label><input id="new-cat" placeholder="Meals"></div>
+          <div class="field" style="margin-bottom:0;"><label>Price ₹</label><input id="new-price" type="number" placeholder="60"></div>
+          <div class="field" style="margin-bottom:0;"><label>Prep (min)</label><input id="new-prep" type="number" placeholder="8"></div>
+          <button class="btn btn-primary" id="add-item-btn">Add Item</button>
+        </div>
+      </div>
+
+      <div class="card" style="overflow-x:auto;">
+        <table class="menu-table">
+          <thead><tr><th></th><th>Item</th><th>Category</th><th>Price</th><th>Prep Time</th><th>Available</th><th></th></tr></thead>
+          <tbody id="menu-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  function render(){
+    const menu = qlGetMenu();
+    document.getElementById('menu-tbody').innerHTML = menu.map(item=>`
+      <tr data-id="${item.id}">
+        <td><img class="mini-thumb" src="${item.img}" alt=""></td>
+        <td>${item.name}</td>
+        <td class="muted text-sm">${item.category}</td>
+        <td class="mono">₹${item.price}</td>
+        <td class="mono">${item.prepTime} min</td>
+        <td><div class="toggle ${item.available?'on':''}"></div></td>
+        <td><button class="btn-ghost del-btn" title="Remove"><i data-lucide="trash-2" style="width:15px;height:15px;"></i></button></td>
+      </tr>`).join('');
+    qlIcons();
+
+    document.querySelectorAll('.toggle').forEach(t=>{
+      t.addEventListener('click', ()=>{
+        const id = t.closest('tr').dataset.id;
+        const menu = qlGetMenu();
+        const item = menu.find(m=>m.id===id);
+        item.available = !item.available;
+        qlSaveMenu(menu);
+        t.classList.toggle('on');
+      });
+    });
+    document.querySelectorAll('.del-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.closest('tr').dataset.id;
+        let menu = qlGetMenu();
+        menu = menu.filter(m=>m.id!==id);
+        qlSaveMenu(menu);
+        qlToast('Item removed');
+        render();
+      });
+    });
+  }
+
+  document.getElementById('add-item-btn').addEventListener('click', ()=>{
+    const name = document.getElementById('new-name').value.trim();
+    const category = document.getElementById('new-cat').value.trim() || 'Snacks';
+    const price = parseInt(document.getElementById('new-price').value) || 0;
+    const prepTime = parseInt(document.getElementById('new-prep').value) || 5;
+    if(!name){ qlToast('Enter an item name'); return; }
+    const menu = qlGetMenu();
+    menu.push({
+      id:'m'+Date.now(), name, category, price, prepTime, veg:true, available:true, popular:false,
+      desc:'Freshly prepared at the canteen.',
+      img:'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80'
+    });
+    qlSaveMenu(menu);
+    document.getElementById('new-name').value='';
+    document.getElementById('new-cat').value='';
+    document.getElementById('new-price').value='';
+    document.getElementById('new-prep').value='';
+    qlToast(`${name} added to menu`);
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>

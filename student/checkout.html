@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — QueueLess</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .checkout-wrap{padding:30px 0 60px; display:grid; grid-template-columns:1.4fr 1fr; gap:30px; align-items:flex-start;}
+  .co-section{margin-bottom:26px;}
+  .co-section h3{font-size:15px; margin-bottom:14px; display:flex; align-items:center; gap:8px;}
+  .info-row{display:flex; justify-content:space-between; padding:8px 0; font-size:14px;}
+  .slot-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:8px;}
+  .slot{padding:12px 6px; text-align:center; border:1.5px solid var(--line); border-radius:var(--radius-s); font-family:var(--font-mono); font-weight:600; font-size:13px; cursor:pointer;}
+  .slot.selected{border-color:var(--amber); background:var(--amber-tint); color:var(--amber-dark);}
+  .slot.full{opacity:.4; cursor:not-allowed; position:relative;}
+  .slot.full .full-txt{display:block; font-family:var(--font-body); font-weight:500; font-size:9.5px; margin-top:2px;}
+  .summary-row{display:flex; justify-content:space-between; padding:7px 0; font-size:13.5px;}
+  .summary-row.total{border-top:1px solid var(--line); margin-top:6px; padding-top:12px; font-weight:700; font-size:16px;}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="nav-links"><a href="dashboard.html">Home</a><a href="menu.html">Menu</a><a href="history.html">Orders</a><a href="profile.html">Profile</a></div>
+    <div class="nav-right"><a href="cart.html" class="cart-btn"><i data-lucide="shopping-bag" style="width:19px;height:19px;"></i><span class="cart-count">0</span></a></div>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 style="font-size:24px; margin-top:28px;">Checkout</h1>
+  <div class="checkout-wrap" id="checkout-wrap"></div>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/orders.js"></script>
+<script src="../js/cart.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  const cart = qlGetCart();
+  if(cart.length === 0){ window.location.href = 'cart.html'; }
+
+  const menu = qlGetMenu();
+  const prep = qlEstimatePrepTime(cart);
+  const now = new Date();
+  const baseSlot = qlAddMinutes(now, prep);
+
+  // Build 4 candidate slots, one randomly marked full for realism
+  const slots = [0,5,10,15].map(m=>qlAddMinutes(baseSlot, m));
+  const fullIndex = Math.floor(Math.random()*4) === 0 ? 1 : -1; // occasionally mark one full
+  let selectedSlot = slots[0];
+  let paymentMethod = 'UPI';
+
+  const subtotal = qlCartSubtotal();
+
+  document.getElementById('checkout-wrap').innerHTML = `
+    <div>
+      <div class="card card-pad co-section">
+        <h3><i data-lucide="map-pin" style="width:16px;height:16px;"></i> Pickup Information</h3>
+        <div class="info-row"><span class="muted">Pickup location</span><span>Main College Canteen</span></div>
+        <div class="info-row"><span class="muted">Estimated preparation</span><span class="mono">~${prep} min</span></div>
+        <div class="info-row"><span class="muted">Choose pickup window</span><span></span></div>
+        <div class="slot-grid" id="slot-grid"></div>
+      </div>
+
+      <div class="card card-pad co-section">
+        <h3><i data-lucide="credit-card" style="width:16px;height:16px;"></i> Payment Method</h3>
+        <label class="radio-row selected" data-pm="UPI"><input type="radio" name="pm" checked> UPI</label>
+        <label class="radio-row" data-pm="Card"><input type="radio" name="pm"> Card</label>
+        <label class="radio-row" data-pm="Cash"><input type="radio" name="pm"> Cash at Counter</label>
+        <p class="text-xs muted">This is a frontend prototype — payment is simulated, no real transaction occurs.</p>
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:15px; margin-bottom:14px;">Order Summary</h3>
+      <div id="summary-items"></div>
+      <div class="summary-row"><span class="muted">Subtotal</span><span>₹${subtotal}</span></div>
+      <div class="summary-row"><span class="muted">Packaging</span><span>₹0</span></div>
+      <div class="summary-row total"><span>Total</span><span>₹${subtotal}</span></div>
+      <button class="btn btn-amber btn-block mt-16" id="place-order-btn">Place Order</button>
+    </div>
+  `;
+  qlIcons();
+
+  document.getElementById('summary-items').innerHTML = cart.map(ci=>{
+    const item = menu.find(m=>m.id===ci.id);
+    return `<div class="summary-row"><span class="muted">${item.name} × ${ci.qty}</span><span>₹${item.price*ci.qty}</span></div>`;
+  }).join('');
+
+  document.getElementById('slot-grid').innerHTML = slots.map((s,i)=>`
+    <div class="slot ${i===0?'selected':''} ${i===fullIndex?'full':''}" data-idx="${i}">
+      ${qlFormatTime(s)}
+      ${i===fullIndex ? '<span class="full-txt">Slot Full</span>' : ''}
+    </div>`).join('');
+
+  document.querySelectorAll('.slot').forEach(el=>{
+    if(el.classList.contains('full')) return;
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('.slot').forEach(s=>s.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedSlot = slots[parseInt(el.dataset.idx)];
+    });
+  });
+
+  document.querySelectorAll('.radio-row').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      document.querySelectorAll('.radio-row').forEach(r=>{ r.classList.remove('selected'); r.querySelector('input').checked=false; });
+      row.classList.add('selected');
+      row.querySelector('input').checked = true;
+      paymentMethod = row.dataset.pm;
+    });
+  });
+
+  document.getElementById('place-order-btn').addEventListener('click', ()=>{
+    const order = qlCreateOrder({
+      items: cart,
+      pickupTime: qlFormatTime(selectedSlot),
+      paymentMethod
+    });
+    qlClearCart();
+    window.location.href = `order.html?id=${order.id}`;
+  });
+</script>
+</body>
+</html>
