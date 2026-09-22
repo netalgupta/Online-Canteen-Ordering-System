@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics — QueueLess Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/dashboard.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+
+<div class="dash-shell">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <nav class="dash-nav">
+      <a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <a href="menu.html"><i data-lucide="utensils"></i> Menu Management</a>
+      <a href="analytics.html" class="active"><i data-lucide="bar-chart-3"></i> Analytics</a>
+    </nav>
+    <div class="dash-sidebar-foot">Logged in as Admin<br><a href="#" onclick="qlLogout();return false;" style="color:rgba(248,247,243,.7);">Log out</a></div>
+  </aside>
+
+  <div class="dash-mobile-nav"><a href="dashboard.html">Dashboard</a><a href="menu.html">Menu</a><a href="analytics.html" class="active">Analytics</a></div>
+
+  <main class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 style="font-size:20px;">Analytics</h1>
+        <p class="text-sm muted">Daily &amp; weekly performance across the canteen</p>
+      </div>
+      <div class="dash-user">
+        <span class="role-badge">Admin</span>
+        <span class="dash-user-label muted text-sm" id="dash-user-name"></span>
+        <a class="dash-user-avatar" id="dash-avatar" href="../student/profile.html">S</a>
+        <div class="dash-user-links"><a href="../student/profile.html">Profile</a><a href="#" class="logout" onclick="qlLogout();return false;">Log out</a></div>
+      </div>
+    </div>
+
+    <div class="dash-content">
+      <div class="grid grid-2" style="grid-template-columns:1fr 1fr;">
+        <div class="chart-panel"><h3>Revenue by Day</h3><canvas id="revChart" height="160"></canvas></div>
+        <div class="chart-panel"><h3>Order Status Distribution</h3><canvas id="statusChart" height="160"></canvas></div>
+      </div>
+
+      <div class="chart-panel mt-24">
+        <h3>Peak Hours — Orders by Time</h3>
+        <canvas id="peakChart" height="90"></canvas>
+      </div>
+
+      <div class="chart-panel mt-24">
+        <h3>Most Popular Food</h3>
+        <div id="popular-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/data.js"></script>
+<script>
+  const dashUser = qlGetUser();
+  const dashName = document.getElementById('dash-user-name');
+  const dashAvatar = document.getElementById('dash-avatar');
+  if(dashName) dashName.textContent = dashUser.name || '';
+  if(dashAvatar) dashAvatar.textContent = (dashUser.name || 'S').charAt(0).toUpperCase();
+</script>
+
+<script>if(!qlRequireRole('admin')){throw new Error('Unauthorized');}</script>
+<script src="../js/orders.js"></script>
+<script src="../js/admin.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  new Chart(document.getElementById('revChart'), {
+    type:'line',
+    data:{ labels: QL_ADMIN_BASELINE.revenueByDay.map(x=>x.d),
+      datasets:[{ data: QL_ADMIN_BASELINE.revenueByDay.map(x=>x.v), borderColor:'#A8121C', backgroundColor:'rgba(168,18,28,.12)', fill:true, tension:.35, pointRadius:4, pointBackgroundColor:'#A8121C' }] },
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{grid:{color:'#F3F3F3'}}, x:{grid:{display:false}} } }
+  });
+
+  const orders = qlGetOrders();
+  const statusCounts = {received:0, accepted:0, preparing:0, ready:0, collected:0};
+  orders.forEach(o=> statusCounts[o.status] = (statusCounts[o.status]||0)+1);
+  // baseline so the chart looks meaningful even with few live orders
+  const baseline = {received:8, accepted:5, preparing:12, ready:6, collected:1217};
+  Object.keys(baseline).forEach(k=> statusCounts[k]+=baseline[k]);
+
+  new Chart(document.getElementById('statusChart'), {
+    type:'doughnut',
+    data:{ labels:['Received','Accepted','Preparing','Ready','Collected'],
+      datasets:[{ data:[statusCounts.received, statusCounts.accepted, statusCounts.preparing, statusCounts.ready, statusCounts.collected],
+        backgroundColor:['#FDEAEA','#C41623','#A8121C','#A8121C','#1A1A1A'] }] },
+    options:{ plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:11}}}} }
+  });
+
+  new Chart(document.getElementById('peakChart'), {
+    type:'bar',
+    data:{ labels: QL_ADMIN_BASELINE.ordersByHour.map(x=>x.h),
+      datasets:[{ data: QL_ADMIN_BASELINE.ordersByHour.map(x=>x.v), backgroundColor:'#A8121C', borderRadius:6 }] },
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true, grid:{color:'#F3F3F3'}}, x:{grid:{display:false}} } }
+  });
+
+  document.getElementById('popular-list').innerHTML = QL_ADMIN_BASELINE.popular.map((p,i)=>`
+    <div class="flex between center" style="padding:10px 0; border-bottom:1px solid var(--line);">
+      <span class="text-sm"><span class="mono muted">${i+1}.</span> ${p.name}</span>
+      <div style="flex:1; margin:0 16px; background:var(--paper-dim); border-radius:999px; height:6px; overflow:hidden;">
+        <div style="width:${(p.orders/QL_ADMIN_BASELINE.popular[0].orders*100)}%; background:var(--amber); height:100%;"></div>
+      </div>
+      <span class="mono text-sm" style="font-weight:700;">${p.orders}</span>
+    </div>`).join('');
+</script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu Management — QueueLess Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/dashboard.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .add-form-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; align-items:end;}
+</style>
+</head>
+<body>
+
+<div class="dash-shell">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <nav class="dash-nav">
+      <a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <a href="menu.html" class="active"><i data-lucide="utensils"></i> Menu Management</a>
+      <a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a>
+    </nav>
+    <div class="dash-sidebar-foot">Logged in as Admin<br><a href="#" onclick="qlLogout();return false;" style="color:rgba(248,247,243,.7);">Log out</a></div>
+  </aside>
+
+  <div class="dash-mobile-nav"><a href="dashboard.html">Dashboard</a><a href="menu.html" class="active">Menu</a><a href="analytics.html">Analytics</a></div>
+
+  <main class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 style="font-size:20px;">Menu Management</h1>
+        <p class="text-sm muted">Add, edit, price and staff the canteen's catalog</p>
+      </div>
+      <div class="dash-user">
+        <span class="role-badge">Admin</span>
+        <span class="dash-user-label muted text-sm" id="dash-user-name"></span>
+        <a class="dash-user-avatar" id="dash-avatar" href="../student/profile.html">S</a>
+        <div class="dash-user-links"><a href="../student/profile.html">Profile</a><a href="#" class="logout" onclick="qlLogout();return false;">Log out</a></div>
+      </div>
+    </div>
+
+    <div class="dash-content">
+      <div class="menu-manage-tools">
+        <div class="menu-search-wrap">
+          <i data-lucide="search"></i>
+          <input id="menu-search" class="menu-search" type="search" placeholder="Search menu by item or category..." autocomplete="off">
+          <button id="menu-search-clear" class="menu-search-clear" type="button" aria-label="Clear search">×</button>
+        </div>
+        <span id="menu-search-count" class="menu-search-count"></span>
+      </div>
+      <div class="card card-pad mb-24">
+        <h3 style="font-size:15px; margin-bottom:14px;">Add New Item</h3>
+        <div class="add-form-grid">
+          <div class="field" style="margin-bottom:0;"><label>Name</label><input id="new-name" placeholder="e.g. Idli Sambar"></div>
+          <div class="field" style="margin-bottom:0;"><label>Category</label><select id="new-cat"></select></div>
+          <div class="field" style="margin-bottom:0;"><label>Price ₹</label><input id="new-price" type="number" placeholder="60"></div>
+          <div class="field" style="margin-bottom:0;"><label>Prep (min)</label><input id="new-prep" type="number" placeholder="Auto from category"></div>
+          <button class="btn btn-primary" id="add-item-btn">Add Item</button>
+        </div>
+      </div>
+
+      <div class="card" style="overflow-x:auto;">
+        <table class="menu-table">
+          <thead><tr><th></th><th>Item</th><th>Category</th><th>Price</th><th>Prep Time</th><th>Available</th><th></th></tr></thead>
+          <tbody id="menu-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/data.js"></script>
+<script>
+  const dashUser = qlGetUser();
+  const dashName = document.getElementById('dash-user-name');
+  const dashAvatar = document.getElementById('dash-avatar');
+  if(dashName) dashName.textContent = dashUser.name || '';
+  if(dashAvatar) dashAvatar.textContent = (dashUser.name || 'S').charAt(0).toUpperCase();
+</script>
+
+<script>if(!qlRequireRole('admin')){throw new Error('Unauthorized');}</script>
+<script src="../js/app.js"></script>
+<script>
+  function render(){
+    const menu = qlGetMenu();
+    const query = (document.getElementById('menu-search')?.value || '').trim().toLowerCase();
+    const visibleMenu = menu.filter(item => !query || `${item.name} ${item.category}`.toLowerCase().includes(query));
+    document.getElementById('menu-search-count').textContent = query ? `${visibleMenu.length} matching item${visibleMenu.length===1?'':'s'}` : `${visibleMenu.length} items`;
+    document.getElementById('menu-tbody').innerHTML = visibleMenu.length ? visibleMenu.map(item=>`
+      <tr data-id="${item.id}">
+        <td><img class="mini-thumb" src="${qlGetItemImage(item)}" alt=""></td>
+        <td>${item.name}</td>
+        <td class="muted text-sm">${item.category}</td>
+        <td class="mono">₹${item.price}</td>
+        <td><input type="number" class="prep-input" value="${item.prepTimeMinutes}" min="1" style="width:68px;padding:6px 8px;border:1.5px solid var(--line);border-radius:6px;font-family:var(--font-mono);"> min</td>
+        <td><div class="toggle ${item.available?'on':''}"></div></td>
+        <td><button class="btn btn-ghost edit-btn menu-edit-btn" title="Edit item"><i data-lucide="pencil" style="width:15px;height:15px;"></i> Edit</button> <button class="btn-ghost del-btn" title="Remove"><i data-lucide="trash-2" style="width:15px;height:15px;"></i></button></td>
+      </tr>`).join('') : `<tr><td colspan="7" style="padding:28px;text-align:center;color:var(--ink-soft);">No menu items match “${query.replace(/"/g,'&quot;')}”.</td></tr>`;
+    qlIcons();
+
+    document.querySelectorAll('.toggle').forEach(t=>{
+      t.addEventListener('click', ()=>{
+        const id = t.closest('tr').dataset.id;
+        const menu = qlGetMenu();
+        const item = menu.find(m=>m.id===id);
+        item.available = !item.available;
+        qlSaveMenu(menu);
+        t.classList.toggle('on');
+      });
+    });
+    document.querySelectorAll('.prep-input').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const id = inp.closest('tr').dataset.id;
+        const menu = qlGetMenu();
+        const item = menu.find(m=>m.id===id);
+        item.prepTimeMinutes = Math.max(1, parseInt(inp.value) || item.prepTimeMinutes);
+        inp.value = item.prepTimeMinutes;
+        qlSaveMenu(menu);
+        qlToast(`${item.name} prep time updated`);
+      });
+    });
+    document.querySelectorAll('.edit-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.closest('tr').dataset.id;
+        const menu = qlGetMenu();
+        const item = menu.find(m=>m.id===id);
+        if(!item) return;
+        const name = prompt('Item name:', item.name);
+        if(name === null) return;
+        const price = prompt('Price (₹):', item.price);
+        if(price === null) return;
+        const category = prompt('Category:', item.category);
+        if(category === null) return;
+        item.name = name.trim() || item.name;
+        item.price = Math.max(0, parseInt(price) || item.price);
+        item.category = category.trim() || item.category;
+        qlSaveMenu(menu);
+        qlToast(`${item.name} updated`);
+        render();
+      });
+    });
+    document.querySelectorAll('.del-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.closest('tr').dataset.id;
+        let menu = qlGetMenu();
+        menu = menu.filter(m=>m.id!==id);
+        qlSaveMenu(menu);
+        qlToast('Item removed');
+        render();
+      });
+    });
+  }
+
+  document.getElementById('add-item-btn').addEventListener('click', ()=>{
+    const name = document.getElementById('new-name').value.trim();
+    const category = document.getElementById('new-cat').value || 'Snacks';
+    const price = parseInt(document.getElementById('new-price').value) || 0;
+    const prepDefaults = { 'Hot Items':3,'Snacks':6,'Fast Items':7,'Dosa Items':10,'Special Uttappa':9,'Sandwiches Item':7,'Grilled Sandwich':8,'Chaat Items':5,'Noodles':11,'Special Rice':11,'Gravy Items':9,'Choupsey':9,'Rice Items':11,'Soup':6,'Lunch Items':9,'Juices':4,'Frankie Counter':8,'Desserts':2,'Packaged Snacks':1 };
+    const prepTime = parseInt(document.getElementById('new-prep').value) || prepDefaults[category] || 5;
+    if(!name){ qlToast('Enter an item name'); return; }
+    const menu = qlGetMenu();
+    menu.push({
+      id:'m'+Date.now(), name, category, price, prepTimeMinutes:prepTime, veg:true, available:true, popular:false,
+      desc:'Freshly prepared at the canteen.'
+    });
+    qlSaveMenu(menu);
+    document.getElementById('new-name').value='';
+    document.getElementById('new-cat').selectedIndex=0;
+    document.getElementById('new-price').value='';
+    document.getElementById('new-prep').value='';
+    qlToast(`${name} added to menu`);
+    render();
+  });
+
+  const categoryDefaults = { 'Hot Items':3,'Snacks':6,'Fast Items':7,'Dosa Items':10,'Special Uttappa':9,'Sandwiches Item':7,'Grilled Sandwich':8,'Chaat Items':5,'Noodles':11,'Special Rice':11,'Gravy Items':9,'Choupsey':9,'Rice Items':11,'Soup':6,'Lunch Items':9,'Juices':4,'Frankie Counter':8,'Desserts':2,'Packaged Snacks':1 };
+  const catSelect = document.getElementById('new-cat');
+  catSelect.innerHTML = Object.keys(categoryDefaults).map(c=>`<option value=\"${c}\">${c}</option>`).join('');
+  document.getElementById('new-prep').placeholder = `Default: ${categoryDefaults[catSelect.value]} min`;
+  catSelect.addEventListener('change', ()=>{ document.getElementById('new-prep').placeholder = `Default: ${categoryDefaults[catSelect.value]} min`; });
+
+  const menuSearch = document.getElementById('menu-search');
+  const menuSearchClear = document.getElementById('menu-search-clear');
+  menuSearch.addEventListener('input', ()=>{
+    menuSearchClear.classList.toggle('show', !!menuSearch.value);
+    render();
+  });
+  menuSearchClear.addEventListener('click', ()=>{ menuSearch.value=''; menuSearchClear.classList.remove('show'); menuSearch.focus(); render(); });
+  render();
+</script>
+</body>
+</html>

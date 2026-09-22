@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Cart — QueueLess</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .cart-wrap{padding:30px 0 60px; display:grid; grid-template-columns:1.5fr 1fr; gap:30px; align-items:flex-start;}
+  .cart-item-row{display:flex; align-items:center; gap:14px; padding:16px 0; border-bottom:1px solid var(--line);}
+  .cart-item-row:last-child{border-bottom:none;}
+  .ci-img{width:56px; height:56px; border-radius:10px; background-size:cover; background-position:center; flex-shrink:0;}
+  .ci-name{font-weight:600; font-size:14.5px;}
+  .ci-note{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .ci-price{font-family:var(--font-mono); font-weight:700; font-size:14px; margin-left:auto; margin-right:14px;}
+  .qty-control-sm{display:flex; align-items:center; border:1.5px solid var(--line); border-radius:999px;}
+  .qty-control-sm button{width:28px; height:28px; background:none; border:none; font-size:14px; font-weight:600;}
+  .qty-control-sm span{width:22px; text-align:center; font-family:var(--font-mono); font-weight:700; font-size:13px;}
+  .remove-x{margin-left:10px; color:var(--ink-soft);}
+  .summary-row{display:flex; justify-content:space-between; padding:9px 0; font-size:14px;}
+  .summary-row.total{border-top:1px solid var(--line); margin-top:8px; padding-top:14px; font-weight:700; font-size:16px;}
+  .note-box{background:var(--crimson-tint); color:var(--crimson-dark); font-size:12.5px; padding:11px 14px; border-radius:var(--radius-s); margin-top:16px;}
+  @media(max-width:800px){
+    .cart-wrap{grid-template-columns:1fr;gap:14px;padding-top:18px;}
+    .cart-wrap > .card{min-width:0;width:100%;}
+    .cart-item-row{display:grid;grid-template-columns:52px minmax(0,1fr) auto;grid-template-areas:'img info price' 'img info qty';column-gap:10px;row-gap:8px;align-items:center;}
+    .ci-img{grid-area:img;width:52px;height:52px;}
+    .cart-item-row > div:nth-child(2){grid-area:info;min-width:0;}
+    .ci-price{grid-area:price;margin:0;font-size:13px;}
+    .qty-control-sm{grid-area:qty;justify-self:end;}
+    .remove-x{position:absolute;right:8px;top:8px;margin:0;}
+    .cart-item-row{position:relative;padding-right:26px;}
+  }
+  @media(max-width:420px){
+    .cart-item-row{grid-template-columns:48px minmax(0,1fr) auto;column-gap:9px;padding:13px 24px 13px 0;}
+    .ci-img{width:48px;height:48px;}
+    .ci-name{font-size:13.5px;}
+    .ci-note{font-size:11px;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="nav-links"><a href="dashboard.html">Home</a><a href="menu.html">Menu</a><a href="history.html">Orders</a><a href="profile.html">Profile</a></div>
+    <div class="nav-right">
+      <a href="cart.html" class="cart-btn"><i data-lucide="shopping-bag" style="width:19px;height:19px;"></i><span class="cart-count">0</span></a>
+      <a href="profile.html" class="avatar">A</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container"><div class="page-exit-row"><a href="dashboard.html" class="page-back"><i data-lucide="arrow-left"></i> Back to home</a><a href="menu.html" class="page-back">Continue ordering</a></div>
+  <h1 style="font-size:24px; margin-top:28px;">Your Order</h1>
+  <div class="cart-wrap" id="cart-wrap"></div>
+</div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/orders.js"></script>
+<script src="../js/cart.js"></script>
+<script>if(!qlRequireRole('student')){throw new Error('Unauthorized');}</script>
+<script src="../js/app.js"></script>
+<script>
+  function render(){
+    const cart = qlGetCart();
+    const menu = qlGetMenu();
+    const wrap = document.getElementById('cart-wrap');
+
+    if(cart.length === 0){
+      wrap.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+        <i data-lucide="shopping-bag"></i>
+        <p>Your cart is empty.</p>
+        <a href="menu.html" class="btn btn-primary btn-sm mt-16">Browse Menu</a>
+      </div>`;
+      qlIcons();
+      return;
+    }
+
+    const rows = cart.map(ci=>{
+      const item = menu.find(m=>m.id===ci.id);
+      if(!item) return '';
+      return `
+      <div class="cart-item-row" data-id="${item.id}">
+        <div class="ci-img" style="background-image:url('${qlGetItemImage(item)}')"></div>
+        <div>
+          <div class="ci-name">${item.name}</div>
+          ${ci.instructions ? `<div class="ci-note">Note: ${ci.instructions}</div>` : ''}
+          <div class="ci-note">₹${item.price} each · ~${item.prepTimeMinutes} min</div>
+        </div>
+        <span class="ci-price">₹${item.price * ci.qty}</span>
+        <div class="qty-control-sm">
+          <button class="qdec">−</button>
+          <span>${ci.qty}</span>
+          <button class="qinc">+</button>
+        </div>
+        <button class="remove-x rm-btn"><i data-lucide="trash-2" style="width:15px;height:15px;"></i></button>
+      </div>`;
+    }).join('');
+
+    const subtotal = qlCartSubtotal();
+    const prep = qlEstimatePrepTime(cart);
+    const now = new Date();
+    const pickup = qlAddMinutes(now, prep + 3);
+
+    wrap.innerHTML = `
+      <div class="card card-pad">${rows}</div>
+      <div class="card card-pad">
+        <h3 style="font-size:16px; margin-bottom:14px;">Order Summary</h3>
+        <div class="summary-row"><span class="muted">Items</span><span>${cart.reduce((s,c)=>s+c.qty,0)}</span></div>
+        <div class="summary-row"><span class="muted">Estimated prep</span><span>~${prep} min</span></div>
+        <div class="summary-row"><span class="muted">Suggested pickup</span><span class="mono">${qlFormatTime(pickup)}</span></div>
+        <div class="summary-row total"><span>Subtotal</span><span>₹${subtotal}</span></div>
+        <div class="note-box"><i data-lucide="info" style="width:12px;height:12px;vertical-align:-1px;"></i> Your pickup time may change slightly depending on current kitchen workload.</div>
+        <a href="checkout.html" class="btn btn-amber btn-block mt-16">Proceed to Checkout <i data-lucide="arrow-right"></i></a>
+      </div>`;
+    qlIcons();
+
+    wrap.querySelectorAll('.cart-item-row').forEach(row=>{
+      const id = row.dataset.id;
+      row.querySelector('.qinc').addEventListener('click', ()=>{
+        const c = qlGetCart().find(x=>x.id===id);
+        qlSetCartQty(id, c.qty+1); render();
+      });
+      row.querySelector('.qdec').addEventListener('click', ()=>{
+        const c = qlGetCart().find(x=>x.id===id);
+        qlSetCartQty(id, c.qty-1); render();
+      });
+      row.querySelector('.rm-btn').addEventListener('click', ()=>{
+        qlRemoveFromCart(id); render();
+      });
+    });
+  }
+  render();
+</script>
+</body>
+</html>

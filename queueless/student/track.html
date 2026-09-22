@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Order — QueueLess</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .track-wrap{max-width:640px; margin:0 auto; padding:32px 0 60px;}
+  .track-head{text-align:center; margin-bottom:30px;}
+  .track-head .id{font-family:var(--font-mono); font-size:13px; color:var(--ink-soft);}
+  .track-head h1{font-size:26px; margin-top:4px;}
+
+  .timeline{position:relative; padding-left:34px; margin:30px 0;}
+  .tl-item{position:relative; padding-bottom:30px;}
+  .tl-item:last-child{padding-bottom:0;}
+  .tl-dot{position:absolute; left:-34px; top:0; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--paper-dim); border:2px solid var(--line);}
+  .tl-dot svg{width:13px; height:13px;}
+  .tl-item.done .tl-dot{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .tl-item.current .tl-dot{background:var(--amber); border-color:var(--amber); color:#fff; animation:pulse-ring 1.6s infinite;}
+  @keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(255,107,53,.4);} 70%{box-shadow:0 0 0 8px rgba(255,107,53,0);} 100%{box-shadow:0 0 0 0 rgba(255,107,53,0);}}
+  .tl-line{position:absolute; left:-23px; top:24px; bottom:-6px; width:2px; background:var(--line);}
+  .tl-item.done .tl-line{background:var(--teal);}
+  .tl-item:last-child .tl-line{display:none;}
+  .tl-label{font-weight:600; font-size:14.5px;}
+  .tl-item.done .tl-label, .tl-item.current .tl-label{color:var(--ink);}
+  .tl-item:not(.done):not(.current) .tl-label{color:var(--ink-soft);}
+  .tl-time{font-size:12px; color:var(--ink-soft); font-family:var(--font-mono); margin-top:2px;}
+
+  .meta-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:26px 0;}
+  .meta-box{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:16px;}
+  .meta-box .l{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);}
+  .meta-box .v{font-family:var(--font-mono); font-weight:700; font-size:19px; margin-top:6px;}
+
+  .kitchen-box{background:var(--ink); color:var(--paper); border-radius:var(--radius-l); padding:22px; margin-top:8px;}
+  .kitchen-box h3{font-size:14.5px; margin-bottom:4px;}
+  .kitchen-box .demand{font-size:12.5px; color:rgba(248,247,243,.6); margin-bottom:14px;}
+  .kitchen-box .progress{background:rgba(248,247,243,.15);}
+  .kb-row{display:flex; justify-content:space-between; margin-top:12px; font-size:13px;}
+  .kb-row .v{font-family:var(--font-mono); font-weight:700;}
+  .kb-explain{font-size:12px; color:rgba(248,247,243,.55); margin-top:14px;}
+
+  .countdown-box{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--crimson-tint);color:var(--crimson-dark);font-weight:800;font-size:13px;text-align:center}.ready-banner{background:var(--amber); color:#fff; text-align:center; padding:18px; border-radius:var(--radius-m); margin-bottom:22px; font-weight:600;}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="nav-links"><a href="dashboard.html">Home</a><a href="menu.html">Menu</a><a href="history.html">Orders</a><a href="profile.html">Profile</a></div>
+    <div class="nav-right"><a href="profile.html" class="avatar" id="nav-avatar" aria-label="Profile">A</a></div>
+  </div>
+</nav>
+
+<div class="container page-exit-row track-top-actions"><a href="history.html" class="page-back"><i data-lucide="arrow-left"></i> Back to orders</a><a href="dashboard.html" class="page-back">Exit tracking</a></div>
+<div class="container track-wrap" id="track-wrap"></div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/orders.js"></script>
+<script>if(!qlRequireRole('student')){throw new Error('Unauthorized');}</script>
+<script src="../js/app.js"></script>
+<script>
+  const user = qlGetUser(); const navAvatar = document.getElementById('nav-avatar'); if(navAvatar) navAvatar.textContent = (user.name||'S').charAt(0).toUpperCase();
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  const trackId = params.get('track');
+  const STEPS = ['received','accepted','preparing','ready','collected'];
+  let lastStatus = null;
+
+  function render(){
+    const wrap=document.getElementById('track-wrap');
+    const order=qlGetOrder(id);
+    if(order && !qlCanAccessOrder(order)){wrap.innerHTML=`<div class="empty-state"><p>This order belongs to another account.</p><a href="history.html" class="btn btn-primary btn-sm mt-16">Back to Orders</a></div>`;return;}
+    if(!order){wrap.innerHTML=`<div class="empty-state"><p>Order not found.</p><a href="dashboard.html" class="btn btn-primary btn-sm mt-16">Go Home</a></div>`;return;}
+    const track=trackId?qlGetTrack(id,trackId):(order.itemTracks||[])[0];
+    if(!track || !track.trackId || !track.id){wrap.innerHTML=`<div class="empty-state"><i data-lucide="package-x"></i><h3>No item is being tracked</h3><p class="muted">This order does not contain a valid item track. Place a new order to start tracking.</p><a href="menu.html" class="btn btn-primary btn-sm mt-16">Order food</a><a href="history.html" class="btn btn-outline btn-sm mt-8">Back to Orders</a></div>`;qlIcons();return;}
+    const menu=qlGetMenu(), item=menu.find(m=>m.id===track.id), counter=qlGetCounter(track.counterId||qlGetItemCounter(item).id), curIdx=STEPS.indexOf(track.status), qPos=qlQueuePosition(id,track.trackId), workload=qlKitchenWorkload(), highDemand=workload.pct>=65;
+    const timelineHTML=STEPS.map((st,i)=>{const done=i<curIdx||track.status==='collected',current=i===curIdx&&track.status!=='collected',h=(track.history||[]).find(x=>x.status===st);return `<div class="tl-item ${done?'done':''} ${current?'current':''}"><div class="tl-line"></div><div class="tl-dot">${done?'<i data-lucide="check"></i>':current?'<i data-lucide="loader"></i>':''}</div><div class="tl-label">${QL_STATUS_LABEL[st]}</div>${h?`<div class="tl-time">${qlFormatTime(new Date(h.at))}</div>`:current?'<div class="tl-time">In progress...</div>':''}</div>`}).join('');
+    const sibling=(order.itemTracks||[]).filter(t=>t.trackId!==track.trackId);
+    wrap.innerHTML=`${track.status==='ready'?`<div class="ready-banner"><i data-lucide="party-popper"></i> ${item?.name||'This item'} is ready for pickup!</div>`:''}<div class="track-head"><div class="id">${item?.name||'Item'} · ${counter.name}</div><h1>${QL_STATUS_LABEL[track.status]}</h1><p class="muted text-sm">This item is tracked independently from the rest of your order.</p></div><div class="meta-grid"><div class="meta-box"><div class="l">Order Pickup</div><div class="v">${order.pickupTime}</div><div class="text-xs muted">${order.pickupDateLabel||'Today'}</div></div><div class="meta-box"><div class="l">Item Pickup</div><div class="v">${track.status==='ready'?'READY':track.status==='collected'?'DONE':track.readyAt?qlTimeLeftLabel(track.readyAt):qPos+' ahead'}</div><div class="text-xs muted">${track.status==='ready'?'Collect this item now':track.status==='collected'?'Already collected':track.readyAt?'Approximate prep timing — staff marks Ready':'Queue position'}</div></div></div>${track.status!=='ready'&&track.status!=='collected'&&track.readyAt?`<div class="countdown-box" id="live-countdown">${qlTimeLeftLabel(track.readyAt).replace('Ready in ','Estimated prep starts in ').replace('Estimated prep time reached — waiting for staff','Estimated prep time reached — waiting for staff to mark Ready')}</div>`:''}<div class="card card-pad"><div class="timeline">${timelineHTML}</div></div><div class="kitchen-box"><h3>Kitchen Status</h3><div class="demand">${highDemand?'High demand right now':'Normal demand'}</div><div class="progress"><div class="progress-fill" style="width:${workload.pct}%"></div></div><div class="kb-row"><span>Kitchen Load</span><span class="v">${workload.pct}%</span></div></div>${sibling.length?`<div class="card card-pad mt-16"><h3 style="font-size:14px;margin-bottom:10px;">Other items in this order</h3>${sibling.map(t=>{const sm=menu.find(m=>m.id===t.id);return `<a class="info-row" style="text-decoration:none;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:11px 0;" href="track.html?id=${id}&track=${t.trackId}"><span>${sm?.name||'Item'} × ${t.qty}</span><span class="pill ${t.status==='ready'?'pill-amber':'pill-teal'}">${QL_STATUS_LABEL[t.status]}</span></a>`}).join('')}</div>`:''}<a href="order.html?id=${id}" class="btn btn-outline btn-block mt-24">View Pickup Token</a><div class="track-exit-actions"><a href="history.html" class="btn btn-outline">Back to Orders</a><a href="dashboard.html" class="btn btn-primary">Done — Home</a></div>`;qlIcons();
+  }
+
+  render();
+  setInterval(render, 1000); // poll localStorage + refresh live countdown
+</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create account — QueueLess</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .auth-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .auth-card{width:100%; max-width:400px;}
+  .auth-brand{display:flex; align-items:center; gap:9px; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:20px; margin-bottom:26px;}
+  .auth-card .card{padding:32px;}
+  .auth-card h1{font-size:22px; margin-bottom:6px;}
+  .auth-card p.sub{color:var(--ink-soft); font-size:13.5px; margin-bottom:24px;}
+  .auth-foot{text-align:center; margin-top:20px; font-size:13.5px; color:var(--ink-soft);}
+  .auth-foot a{color:var(--ink); font-weight:600;}
+  .role-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:-2px 0 16px;}
+  .role-option{position:relative;}
+  .role-option input{position:absolute;opacity:0;pointer-events:none;}
+  .role-option label{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:72px;padding:9px 6px;border:1.5px solid var(--line);border-radius:12px;background:var(--white);font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
+  .role-option small{font-size:9.5px;color:var(--ink-soft);font-weight:500;}
+  .role-option input:checked + label{border-color:var(--crimson);background:var(--crimson-tint);color:var(--crimson-dark);box-shadow:0 0 0 2px rgba(168,18,28,.08);}
+  .demo-note{padding:10px 12px;margin:0 0 16px;border-radius:10px;background:var(--near-white);border:1px solid var(--line);color:var(--ink-soft);font-size:11.5px;line-height:1.45;}
+  .counter-field{display:none}.counter-field.show{display:block}.counter-grid{display:grid;grid-template-columns:1fr;gap:7px}.counter-option{padding:10px 11px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--white)}.counter-option:has(input:checked){border-color:var(--crimson);background:var(--crimson-tint)}
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <a href="index.html" class="auth-brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="card">
+      <h1>Create your account</h1>
+      <p class="sub">Choose a role and enter the matching QueueLess workspace.</p>
+      <form id="register-form">
+        <div class="field">
+          <label>Full name</label>
+          <input type="text" id="name" placeholder="Arya Sharma" required>
+        </div>
+        <div class="field">
+          <label>College email</label>
+          <input type="email" id="email" placeholder="arya@somaiya.edu" required>
+        </div>
+        <div class="field">
+          <label>Roll number</label>
+          <input type="text" id="roll" placeholder="e.g. 21CSB045">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="••••••••" required>
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label>Account type</label>
+          <div class="role-grid">
+            <div class="role-option"><input type="radio" name="role" id="role-student" value="student" checked><label for="role-student"><span>Student</span><small>Order & track</small></label></div>
+            <div class="role-option"><input type="radio" name="role" id="role-staff" value="staff"><label for="role-staff"><span>Staff</span><small>Kitchen tools</small></label></div>
+            <div class="role-option"><input type="radio" name="role" id="role-admin" value="admin"><label for="role-admin"><span>Admin</span><small>Management</small></label></div>
+          </div>
+        </div>
+        <div class="counter-field" id="counter-field">
+          <label>Staff pickup counter</label>
+          <div class="counter-grid">
+            <label class="counter-option"><input type="radio" name="counter" value="C1" checked> <strong>Counter 1</strong> · Packaged Snacks & Ice Cream</label>
+            <label class="counter-option"><input type="radio" name="counter" value="C2"> <strong>Counter 2</strong> · Frankie & Juice</label>
+            <label class="counter-option"><input type="radio" name="counter" value="C3"> <strong>Counter 3</strong> · Chaat · Sev Puri &amp; Pani Puri</label>
+            <label class="counter-option"><input type="radio" name="counter" value="C4"> <strong>Counter 4</strong> · Main Canteen · Meals &amp; Everything Else</label>
+          </div>
+        </div>
+        <div class="demo-note">Select Student, Staff or Admin to open the corresponding QueueLess workspace.</div>
+        <button type="submit" class="btn btn-amber btn-block" id="register-btn">Create Account <i data-lucide="arrow-right"></i></button>
+      </form>
+    </div>
+    <p class="auth-foot">Already have an account? <a href="login.html">Log in</a></p>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.querySelectorAll('input[name="role"]').forEach(r=>r.addEventListener('change',()=>{ document.getElementById('register-btn').firstChild.textContent = r.checked ? (r.value.charAt(0).toUpperCase()+r.value.slice(1)+' Account ') : document.getElementById('register-btn').firstChild.textContent; document.getElementById('counter-field').classList.toggle('show', r.checked && r.value==='staff'); }));
+</script>
+<script>
+  document.getElementById('register-form').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const role = document.querySelector('input[name="role"]:checked').value;
+    const counterId = role==='staff' ? (document.querySelector('input[name="counter"]:checked')?.value || 'C4') : null;
+    qlLogin(name, email, role, true, counterId);
+    window.location.href = qlRoleHome(role);
+  });
+</script>
+</body>
+</html>

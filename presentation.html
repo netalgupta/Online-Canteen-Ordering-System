@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>QueueLess — Academic Presentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap">
+
+<style>
+/* ===========================
+   QUEUELESS DESIGN SYSTEM
+   =========================== */
+:root {
+  --crimson:      #A8121C;
+  --crimson-dark: #880F18;
+  --crimson-tint: #FDEAEA;
+  --white:        #FFFFFF;
+  --near-white:   #F8F7F3;
+  --paper-dim:    #F0EFEB;
+  --ink:          #1A1A1A;
+  --ink-mid:      #3D3D3D;
+  --ink-soft:     #6B6B6B;
+  --ink-faint:    #9A9A9A;
+  --line:         #E4E3DF;
+  --line-strong:  #CCC;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  --r-s:  8px;
+  --r-m:  14px;
+  --r-l:  20px;
+  --r-xl: 26px;
+  --shadow-s: 0 1px 3px rgba(26,26,26,.07), 0 1px 2px rgba(26,26,26,.05);
+  --shadow-m: 0 6px 20px rgba(26,26,26,.09);
+  --shadow-l: 0 16px 40px rgba(26,26,26,.12);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; background: #1A1A1A; }
+
+/* ===========================
+   SLIDE FRAME
+   =========================== */
+.deck {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.slide {
+  width: 1280px;
+  min-height: 720px;
+  background: var(--near-white);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  page-break-after: always;
+}
+
+/* Slide separator */
+.slide + .slide {
+  border-top: 2px solid #000;
+}
+
+/* ===========================
+   SLIDE NAV STRIP (top bar)
+   =========================== */
+.slide-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 44px;
+  border-bottom: 1px solid var(--line);
+  background: var(--white);
+  flex-shrink: 0;
+}
+
+.brand-wordmark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.brand-mark {
+  width: 28px; height: 28px;
+  background: var(--ink);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--crimson);
+}
+
+.slide-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  letter-spacing: .06em;
+}
+
+/* ===========================
+   SHARED LAYOUT UTILITIES
+   =========================== */
+.slide-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 44px 36px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--paper-dim);
+  border: 1px solid var(--line);
+  padding: 5px 11px;
+  border-radius: 999px;
+  margin-bottom: 16px;
+}
+
+.eyebrow.red {
+  background: var(--crimson-tint);
+  border-color: rgba(168,18,28,.18);
+  color: var(--crimson);
+}
+
+.slide-heading {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  line-height: 1.08;
+  margin-bottom: 6px;
+}
+
+.slide-heading .accent { color: var(--crimson); }
+.slide-heading .underline-mark { position: relative; }
+.slide-heading .underline-mark::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -3px;
+  height: 5px;
+  background: var(--crimson);
+  border-radius: 999px;
+  opacity: .9;
+}
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  background: var(--white);
+}
+
+.tag-pill.red {
+  background: var(--crimson-tint);
+  border-color: rgba(168,18,28,.2);
+  color: var(--crimson);
+}
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-l);
+  box-shadow: var(--shadow-s);
+}
+
+.card-dark {
+  background: var(--ink);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: var(--r-l);
+  color: var(--near-white);
+}
+
+/* ===========================
+   SLIDE 1 — OVERVIEW
+   =========================== */
+.s1-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 28px;
+}
+
+.s1-hero {
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  position: relative;
+  background-image:
+    linear-gradient(110deg, rgba(20,20,20,.85) 0%, rgba(20,20,20,.55) 55%, rgba(20,20,20,.15) 100%),
+    url('https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=1400&q=85');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 44px;
+  min-height: 520px;
+}
+
+.s1-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.85);
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.22);
+  padding: 5px 12px;
+  border-radius: 999px;
+  margin-bottom: 16px;
+  width: fit-content;
+}
+
+.s1-hero h1 {
+  font-family: var(--font-display);
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.s1-hero h1 .brand-q {
+  color: var(--crimson);
+}
+
+.s1-hero-sub {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255,255,255,.8);
+  letter-spacing: -0.01em;
+  margin-bottom: 22px;
+  max-width: 420px;
+}
+
+.s1-tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--crimson);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: var(--r-m);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  width: fit-content;
+}
+
+.s1-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.s1-info-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-l);
+  padding: 24px;
+  flex: 1;
+}
+
+.s1-info-card .ic-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+
+.s1-info-card .ic-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.user-chips {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.user-chip {
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--paper-dim);
+  border: 1px solid var(--line);
+  color: var(--ink-mid);
+}
+
+.user-chip.red {
+  background: var(--crimson);
+  color: #fff;
+  border-color: var(--crimson);
+}
+
+.focus-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.focus-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-mid);
+}
+
+.focus-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--crimson);
+  flex-shrink: 0;
+}
+
+.s1-token-card {
+  background: var(--ink);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: var(--r-l);
+  padding: 22px 24px;
+  color: #fff;
+}
+
+.tc-live {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.6);
+  margin-bottom: 12px;
+}
+
+.tc-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #3ECF5A;
+  box-shadow: 0 0 0 3px rgba(62,207,90,.18);
+}
+
+.tc-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.4);
+  margin-bottom: 8px;
+}
+
+.tc-flaps {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+.tc-flap {
+  background: var(--crimson);
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 13px;
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.tc-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+
+.tc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  font-size: 12px;
+}
+
+.tc-row .k { color: rgba(255,255,255,.45); }
+.tc-row .v { color: rgba(255,255,255,.9); font-weight: 500; }
+
+/* ===========================
+   SLIDE 2 — PROBLEM & OBJECTIVES
+   =========================== */
+.s2-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.s2-col {}
+
+.s2-section-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.s2-section-label.red { color: var(--crimson); border-color: rgba(168,18,28,.18); }
+.s2-section-label.green { color: #2E6E62; border-color: rgba(46,110,98,.2); }
+
+.prob-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: var(--shadow-s);
+  margin-bottom: 9px;
+}
+
+.prob-icon {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: var(--crimson-tint);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.prob-icon svg { width: 14px; height: 14px; stroke: var(--crimson); }
+
+.prob-text {
+  font-size: 13px;
+  color: var(--ink-mid);
+  line-height: 1.45;
+  padding-top: 4px;
+}
+
+.obj-card {
+  background: var(--ink);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: var(--r-m);
+  padding: 13px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.obj-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--crimson);
+  flex-shrink: 0;
+  padding-top: 3px;
+  min-width: 20px;
+}
+
+.obj-text {
+  font-size: 13px;
+  color: rgba(248,247,243,.82);
+  line-height: 1.45;
+}
+
+/* ===========================
+   SLIDE 3 — SOLUTION & METHODOLOGY
+   =========================== */
+.s3-workflow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-bottom: 30px;
+  flex: 0 0 auto;
+}
+
+.wf-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.wf-step:not(:last-child)::after {
+  content: '→';
+  position: absolute;
+  right: -10px;
+  top: 22px;
+  font-size: 14px;
+  color: var(--ink-faint);
+  z-index: 2;
+}
+
+.wf-bubble {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow-s);
+  flex-shrink: 0;
+}
+
+.wf-bubble svg { width: 18px; height: 18px; stroke: var(--ink-soft); stroke-width: 1.8; }
+.wf-bubble.active { background: var(--crimson); border-color: var(--crimson); }
+.wf-bubble.active svg { stroke: #fff; }
+
+.wf-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-mid);
+  letter-spacing: -.01em;
+  line-height: 1.3;
+}
+
+.wf-num {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  margin-bottom: 5px;
+  letter-spacing: .06em;
+}
+
+.s3-method {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.method-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-s);
+}
+
+.method-step-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--crimson);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.method-card h4 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.method-card p {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+/* ===========================
+   SLIDE 4 — FEATURES & TECH
+   =========================== */
+.s4-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.s4-col-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.feature-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.feat-item {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 10px 13px;
+  font-size: 12.5px;
+  color: var(--ink-mid);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-s);
+}
+
+.feat-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--crimson);
+  flex-shrink: 0;
+}
+
+.tech-section {
+  margin-bottom: 16px;
+}
+
+.tech-section-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 8px;
+}
+
+.tech-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tech-chip {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-mid);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 5px 11px;
+  box-shadow: var(--shadow-s);
+}
+
+.tech-chip.primary {
+  background: var(--ink);
+  color: rgba(255,255,255,.85);
+  border-color: var(--ink);
+}
+
+.tech-chip.red {
+  background: var(--crimson-tint);
+  color: var(--crimson);
+  border-color: rgba(168,18,28,.2);
+}
+
+/* ===========================
+   SLIDE 5 — OUTCOME & SCOPE
+   =========================== */
+.s5-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.s5-impact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.impact-card {
+  background: var(--ink);
+  border-radius: var(--r-l);
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.impact-icon {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+
+.impact-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--near-white);
+  letter-spacing: -0.01em;
+}
+
+.impact-sub {
+  font-size: 11.5px;
+  color: rgba(248,247,243,.5);
+  line-height: 1.4;
+}
+
+.impact-card:nth-child(3) { background: var(--crimson); }
+.impact-card:nth-child(3) .impact-title { color: #fff; }
+.impact-card:nth-child(3) .impact-sub { color: rgba(255,255,255,.65); }
+
+.s5-quote {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--crimson);
+  border-radius: 0 var(--r-m) var(--r-m) 0;
+  padding: 14px 16px;
+  font-size: 12.5px;
+  color: var(--ink-mid);
+  line-height: 1.55;
+  font-style: italic;
+}
+
+.roadmap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.roadmap-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.roadmap-item:last-child { border-bottom: none; }
+
+.rm-node {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--paper-dim);
+  border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.rm-text {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-mid);
+}
+
+.rm-arrow {
+  margin-left: auto;
+  color: var(--line-strong);
+  font-size: 12px;
+}
+
+.s5-sdg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  margin-top: auto;
+}
+
+.sdg-badge {
+  background: #F36D28;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 5px 10px;
+  border-radius: var(--r-s);
+  white-space: nowrap;
+}
+
+.sdg-text {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+/* ===========================
+   SLIDE FOOTER
+   =========================== */
+.slide-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 44px;
+  border-top: 1px solid var(--line);
+  background: var(--white);
+  flex-shrink: 0;
+}
+
+.sf-left {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.sf-right {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  letter-spacing: .05em;
+}
+
+.sf-right span {
+  color: var(--crimson);
+  font-weight: 700;
+}
+
+/* ===========================
+   PRINT / EXPORT
+   =========================== */
+@media print {
+  html, body { background: #fff; }
+  .slide { page-break-after: always; break-after: page; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+<!-- ============================================================
+     SLIDE 1 — PROJECT OVERVIEW
+     ============================================================ -->
+<div class="slide">
+  <!-- Nav -->
+  <div class="slide-nav">
+    <div class="brand-wordmark">
+      <div class="brand-mark">Q</div>
+      QueueLess
+    </div>
+    <div class="slide-num">01 / 05 &nbsp;·&nbsp; Project Overview</div>
+  </div>
+
+  <!-- Body -->
+  <div class="slide-body">
+    <div class="s1-layout">
+
+      <!-- Hero image panel -->
+      <div class="s1-hero">
+        <div class="s1-hero-eyebrow">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+          Academic Project Presentation
+        </div>
+        <h1>
+          <span class="brand-q">Q</span>ueueLess
+        </h1>
+        <div class="s1-hero-sub">Smart Canteen Pre-Ordering &amp; Queue Management System</div>
+        <div class="s1-tagline">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+          Order ahead. Track preparation. Skip the physical queue.
+        </div>
+      </div>
+
+      <!-- Right info panel -->
+      <div class="s1-right">
+
+        <!-- Domain -->
+        <div class="s1-info-card" style="flex:0 0 auto;">
+          <div class="ic-label">Project Domain</div>
+          <div class="ic-title">Smart Campus · Digital Canteen Management</div>
+          <div class="user-chips">
+            <span class="user-chip red">Students</span>
+            <span class="user-chip">Canteen Staff</span>
+            <span class="user-chip">Admin</span>
+          </div>
+        </div>
+
+        <!-- Focus areas -->
+        <div class="s1-info-card" style="flex:0 0 auto;">
+          <div class="ic-label">Primary Focus Areas</div>
+          <div class="focus-list">
+            <div class="focus-item"><div class="focus-dot"></div><span>Queue Management &amp; Elimination</span></div>
+            <div class="focus-item"><div class="focus-dot"></div><span>Digital Pre-Ordering System</span></div>
+            <div class="focus-item"><div class="focus-dot"></div><span>Real-Time Order Tracking</span></div>
+            <div class="focus-item"><div class="focus-dot"></div><span>Token-Based Pickup Verification</span></div>
+          </div>
+        </div>
+
+        <!-- Live token card -->
+        <div class="s1-token-card" style="flex:1;">
+          <div class="tc-live">
+            <div class="tc-dot"></div>
+            Live Order View
+          </div>
+          <div class="tc-label">Pickup Token</div>
+          <div class="tc-flaps">
+            <div class="tc-flap">2</div>
+            <div class="tc-flap">4</div>
+            <div class="tc-flap">7</div>
+          </div>
+          <div class="tc-rows">
+            <div class="tc-row"><span class="k">Status</span><span class="v">Preparing →</span></div>
+            <div class="tc-row"><span class="k">Ready at</span><span class="v">1 : 18 PM</span></div>
+            <div class="tc-row"><span class="k">Ahead in queue</span><span class="v">4 orders</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="slide-footer">
+    <div class="sf-left">Smart Campus · Canteen Digitization</div>
+    <div class="sf-right">QueueLess &nbsp;<span>·</span>&nbsp; Academic Presentation 2025</div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     SLIDE 2 — PROBLEM & OBJECTIVES
+     ============================================================ -->
+<div class="slide">
+  <div class="slide-nav">
+    <div class="brand-wordmark">
+      <div class="brand-mark">Q</div>
+      QueueLess
+    </div>
+    <div class="slide-num">02 / 05 &nbsp;·&nbsp; Problem &amp; Objectives</div>
+  </div>
+
+  <div class="slide-body">
+
+    <div class="slide-heading" style="margin-bottom:20px;">
+      The Problem We're <span class="underline-mark">Solving</span>
+    </div>
+
+    <div class="s2-layout">
+
+      <!-- LEFT — Problems -->
+      <div class="s2-col">
+        <div class="s2-section-label red">
+          ✕ &nbsp; Current Pain Points
+        </div>
+
+        <div class="prob-card">
+          <div class="prob-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
+          <div class="prob-text">Long physical queues form at the counter during peak lunch hours</div>
+        </div>
+
+        <div class="prob-card">
+          <div class="prob-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          </div>
+          <div class="prob-text">Students wait twice — once to order, then again for preparation</div>
+        </div>
+
+        <div class="prob-card">
+          <div class="prob-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          </div>
+          <div class="prob-text">Crowding &amp; congestion around the canteen counter area</div>
+        </div>
+
+        <div class="prob-card">
+          <div class="prob-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          </div>
+          <div class="prob-text">Staff struggle to manage high order volume during rush hours</div>
+        </div>
+
+        <div class="prob-card">
+          <div class="prob-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          </div>
+          <div class="prob-text">No accurate way for students to know when their food will be ready</div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT — Objectives -->
+      <div class="s2-col">
+        <div class="s2-section-label green">
+          ✓ &nbsp; Project Objectives
+        </div>
+
+        <div class="obj-card">
+          <div class="obj-num">01</div>
+          <div class="obj-text">Enable digital pre-ordering before students physically reach the canteen</div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-num">02</div>
+          <div class="obj-text">Eliminate unnecessary physical waiting time at the counter</div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-num">03</div>
+          <div class="obj-text">Provide real-time order status updates and live queue position</div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-num">04</div>
+          <div class="obj-text">Improve order coordination and workload management for canteen staff</div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-num">05</div>
+          <div class="obj-text">Ensure faster, organised pickup through token-based verification</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <div class="sf-left">Problem Statement &amp; Motivation</div>
+    <div class="sf-right">QueueLess &nbsp;<span>·</span>&nbsp; Academic Presentation 2025</div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     SLIDE 3 — PROPOSED SOLUTION & METHODOLOGY
+     ============================================================ -->
+<div class="slide">
+  <div class="slide-nav">
+    <div class="brand-wordmark">
+      <div class="brand-mark">Q</div>
+      QueueLess
+    </div>
+    <div class="slide-num">03 / 05 &nbsp;·&nbsp; Proposed Solution &amp; Methodology</div>
+  </div>
+
+  <div class="slide-body">
+
+    <div class="slide-heading" style="margin-bottom:22px;">
+      How <span class="accent">QueueLess</span> Works
+    </div>
+
+    <!-- Workflow strip -->
+    <div style="background:var(--white); border:1px solid var(--line); border-radius:var(--r-l); padding:20px 24px; margin-bottom:22px; box-shadow:var(--shadow-s);">
+      <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:16px;">Order Lifecycle — Full Workflow</div>
+      <div class="s3-workflow">
+
+        <div class="wf-step">
+          <div class="wf-num">01</div>
+          <div class="wf-bubble">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <div class="wf-label">Browse<br>Menu</div>
+        </div>
+
+        <div class="wf-step">
+          <div class="wf-num">02</div>
+          <div class="wf-bubble">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          </div>
+          <div class="wf-label">Add to<br>Cart</div>
+        </div>
+
+        <div class="wf-step">
+          <div class="wf-num">03</div>
+          <div class="wf-bubble active">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="wf-label">Place<br>Order</div>
+        </div>
+
+        <div class="wf-step">
+          <div class="wf-num">04</div>
+          <div class="wf-bubble">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </div>
+          <div class="wf-label">Join Digital<br>Queue</div>
+        </div>
+
+        <div class="wf-step">
+          <div class="wf-num">05</div>
+          <div class="wf-bubble">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <div class="wf-label">Track<br>Preparation</div>
+        </div>
+
+        <div class="wf-step">
+          <div class="wf-num">06</div>
+          <div class="wf-bubble">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div class="wf-label">Ready<br>Notification</div>
+        </div>
+
+        <div class="wf-step">
+          <div class="wf-num">07</div>
+          <div class="wf-bubble active">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div class="wf-label">Verify<br>Token</div>
+        </div>
+
+        <div class="wf-step">
+          <div class="wf-num">08</div>
+          <div class="wf-bubble">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <div class="wf-label">Collect<br>Food</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Methodology cards -->
+    <div class="s3-method">
+      <div class="method-card">
+        <div class="method-step-num">Step 01–02</div>
+        <h4>Digital Order Placement</h4>
+        <p>Student browses the live menu, selects items, and submits a pre-order digitally from anywhere on campus.</p>
+      </div>
+      <div class="method-card">
+        <div class="method-step-num">Step 03–04</div>
+        <h4>Queue Calculation</h4>
+        <p>Order is stored in the database; queue position and estimated preparation time are computed and sent to the staff dashboard.</p>
+      </div>
+      <div class="method-card">
+        <div class="method-step-num">Step 05–06</div>
+        <h4>Live Status Tracking</h4>
+        <p>Staff updates preparation status in real time. Student receives live progress and a ready notification when the order is complete.</p>
+      </div>
+      <div class="method-card">
+        <div class="method-step-num">Step 07</div>
+        <h4>Token Verification</h4>
+        <p>Each order carries a unique digital token. Staff scans or confirms the token at pickup to prevent incorrect collection.</p>
+      </div>
+      <div class="method-card">
+        <div class="method-step-num">Step 08</div>
+        <h4>Efficient Pickup</h4>
+        <p>Student walks in only when the order is ready — no standing, no guessing, no crowding around the counter.</p>
+      </div>
+      <div class="method-card" style="background:var(--ink);border-color:rgba(255,255,255,.06);">
+        <div class="method-step-num" style="color:rgba(255,255,255,.4);">Core Principle</div>
+        <h4 style="color:var(--near-white);">Decouple Ordering from Waiting</h4>
+        <p style="color:rgba(248,247,243,.55);">QueueLess does not reduce kitchen time — it makes waiting invisible by moving it off the physical queue.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="slide-footer">
+    <div class="sf-left">Solution Design &amp; Methodology</div>
+    <div class="sf-right">QueueLess &nbsp;<span>·</span>&nbsp; Academic Presentation 2025</div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     SLIDE 4 — SYSTEM FEATURES & TECHNOLOGY
+     ============================================================ -->
+<div class="slide">
+  <div class="slide-nav">
+    <div class="brand-wordmark">
+      <div class="brand-mark">Q</div>
+      QueueLess
+    </div>
+    <div class="slide-num">04 / 05 &nbsp;·&nbsp; System Architecture &amp; Key Features</div>
+  </div>
+
+  <div class="slide-body">
+
+    <div class="slide-heading" style="margin-bottom:20px;">
+      System Architecture &amp; <span class="accent">Key Features</span>
+    </div>
+
+    <div class="s4-layout">
+
+      <!-- LEFT — Core Features -->
+      <div>
+        <div class="s4-col-label">Core Features — Student, Staff &amp; Admin</div>
+        <div class="feature-list">
+          <div class="feat-item"><div class="feat-dot"></div>Student Authentication</div>
+          <div class="feat-item"><div class="feat-dot"></div>Digital Menu &amp; Categories</div>
+          <div class="feat-item"><div class="feat-dot"></div>Cart &amp; Pre-Ordering</div>
+          <div class="feat-item"><div class="feat-dot"></div>Live Order Tracking</div>
+          <div class="feat-item"><div class="feat-dot"></div>Queue Position Display</div>
+          <div class="feat-item"><div class="feat-dot"></div>Pickup Token Verification</div>
+          <div class="feat-item"><div class="feat-dot"></div>Order History</div>
+          <div class="feat-item"><div class="feat-dot"></div>Staff Dashboard</div>
+          <div class="feat-item"><div class="feat-dot"></div>Menu &amp; Availability Mgmt</div>
+          <div class="feat-item"><div class="feat-dot"></div>Admin Analytics</div>
+        </div>
+
+        <!-- Architecture overview strip -->
+        <div style="margin-top:16px; background:var(--ink); border-radius:var(--r-m); padding:16px 18px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <div style="font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.85);padding:5px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-s);">Browser Client</div>
+          <div style="color:rgba(255,255,255,.3);font-size:12px;">→</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.85);padding:5px 10px;background:rgba(168,18,28,.25);border:1px solid rgba(168,18,28,.35);border-radius:var(--r-s);">REST API</div>
+          <div style="color:rgba(255,255,255,.3);font-size:12px;">→</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.85);padding:5px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-s);">MongoDB Atlas</div>
+          <div style="color:rgba(255,255,255,.3);font-size:12px;margin-left:6px;">↕</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.85);padding:5px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-s);">Socket.IO</div>
+        </div>
+      </div>
+
+      <!-- RIGHT — Tech Stack -->
+      <div>
+        <div class="s4-col-label">Technology Stack</div>
+
+        <div class="tech-section">
+          <div class="tech-section-label">Frontend</div>
+          <div class="tech-chips">
+            <div class="tech-chip primary">HTML5</div>
+            <div class="tech-chip primary">CSS3</div>
+            <div class="tech-chip primary">JavaScript</div>
+            <div class="tech-chip">React.js</div>
+          </div>
+        </div>
+
+        <div class="tech-section">
+          <div class="tech-section-label">Backend</div>
+          <div class="tech-chips">
+            <div class="tech-chip primary">Node.js</div>
+            <div class="tech-chip primary">Express.js</div>
+          </div>
+        </div>
+
+        <div class="tech-section">
+          <div class="tech-section-label">Database</div>
+          <div class="tech-chips">
+            <div class="tech-chip primary">MongoDB</div>
+            <div class="tech-chip">MongoDB Atlas</div>
+          </div>
+        </div>
+
+        <div class="tech-section">
+          <div class="tech-section-label">Authentication &amp; Security</div>
+          <div class="tech-chips">
+            <div class="tech-chip red">JWT</div>
+            <div class="tech-chip red">bcrypt</div>
+          </div>
+        </div>
+
+        <div class="tech-section">
+          <div class="tech-section-label">Real-Time Communication</div>
+          <div class="tech-chips">
+            <div class="tech-chip red">Socket.IO</div>
+          </div>
+        </div>
+
+        <div class="tech-section">
+          <div class="tech-section-label">Deployment</div>
+          <div class="tech-chips">
+            <div class="tech-chip">Vercel</div>
+            <div class="tech-chip">Render</div>
+            <div class="tech-chip">Railway</div>
+          </div>
+        </div>
+
+        <!-- Arch note -->
+        <div style="margin-top:16px;background:var(--crimson-tint);border:1px solid rgba(168,18,28,.18);border-radius:var(--r-m);padding:14px 16px;">
+          <div style="font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--crimson);margin-bottom:6px;">Architecture Pattern</div>
+          <div style="font-size:12.5px;color:var(--ink-mid);line-height:1.5;">
+            MVC-structured REST API with JWT-protected routes, real-time Socket.IO events for order status, and a MongoDB document model for orders, users, and menu items.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <div class="sf-left">System Design &amp; Technical Stack</div>
+    <div class="sf-right">QueueLess &nbsp;<span>·</span>&nbsp; Academic Presentation 2025</div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     SLIDE 5 — EXPECTED OUTCOME & FUTURE SCOPE
+     ============================================================ -->
+<div class="slide">
+  <div class="slide-nav">
+    <div class="brand-wordmark">
+      <div class="brand-mark">Q</div>
+      QueueLess
+    </div>
+    <div class="slide-num">05 / 05 &nbsp;·&nbsp; Impact &amp; Future Scope</div>
+  </div>
+
+  <div class="slide-body">
+
+    <div class="slide-heading" style="margin-bottom:20px;">
+      Impact &amp; <span class="accent">Future Scope</span>
+    </div>
+
+    <div class="s5-layout">
+
+      <!-- LEFT — Outcomes -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div>
+          <div class="s4-col-label">Expected Outcomes</div>
+          <div class="s5-impact-grid">
+            <div class="impact-card">
+              <div class="impact-icon">⏱</div>
+              <div class="impact-title">Less Physical Waiting</div>
+              <div class="impact-sub">Students spend zero time standing in line to place orders</div>
+            </div>
+            <div class="impact-card">
+              <div class="impact-icon">🏫</div>
+              <div class="impact-title">Reduced Congestion</div>
+              <div class="impact-sub">Canteen area remains clear during peak lunch hours</div>
+            </div>
+            <div class="impact-card">
+              <div class="impact-icon">📋</div>
+              <div class="impact-title">Better Coordination</div>
+              <div class="impact-sub">Staff have a clear, prioritised digital order queue at all times</div>
+            </div>
+            <div class="impact-card">
+              <div class="impact-icon">✨</div>
+              <div class="impact-title">Smoother Experience</div>
+              <div class="impact-sub">Predictable, transparent ordering process for every student</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="s5-quote">
+          "QueueLess does not eliminate food preparation time — it eliminates unnecessary waiting."
+        </div>
+
+        <!-- SDG -->
+        <div class="s5-sdg">
+          <div class="sdg-badge">SDG 9</div>
+          <div class="sdg-text">
+            <strong>Industry, Innovation &amp; Infrastructure</strong><br>
+            Digitizing the ordering process to make campus food service faster, smarter and more organised.
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT — Future Scope Roadmap -->
+      <div>
+        <div class="s4-col-label">Future Scope — Roadmap</div>
+
+        <div class="roadmap">
+          <div class="roadmap-item">
+            <div class="rm-node">💳</div>
+            <div class="rm-text">Online UPI &amp; Card Payments</div>
+            <div class="rm-arrow">→</div>
+          </div>
+          <div class="roadmap-item">
+            <div class="rm-node">📱</div>
+            <div class="rm-text">Dedicated Mobile Application</div>
+            <div class="rm-arrow">→</div>
+          </div>
+          <div class="roadmap-item">
+            <div class="rm-node">💬</div>
+            <div class="rm-text">WhatsApp Order Notifications</div>
+            <div class="rm-arrow">→</div>
+          </div>
+          <div class="roadmap-item">
+            <div class="rm-node">🤖</div>
+            <div class="rm-text">AI-Powered Food Recommendations</div>
+            <div class="rm-arrow">→</div>
+          </div>
+          <div class="roadmap-item">
+            <div class="rm-node">📊</div>
+            <div class="rm-text">Peak-Hour &amp; Demand Prediction</div>
+            <div class="rm-arrow">→</div>
+          </div>
+          <div class="roadmap-item">
+            <div class="rm-node">🖥</div>
+            <div class="rm-text">Kitchen Display System (KDS)</div>
+            <div class="rm-arrow">→</div>
+          </div>
+        </div>
+
+        <!-- Closing card -->
+        <div style="margin-top:16px;background:var(--ink);border-radius:var(--r-l);padding:22px 24px;">
+          <div style="font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px;">Project Takeaway</div>
+          <div style="font-family:var(--font-display);font-size:19px;font-weight:700;color:#fff;letter-spacing:-0.02em;line-height:1.25;margin-bottom:8px;">
+            A smarter canteen starts with a<br><span style="color:var(--crimson);">smarter queue.</span>
+          </div>
+          <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;">
+            Built with Node.js · Express · MongoDB · Socket.IO
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <div class="sf-left">Expected Outcomes &amp; Future Roadmap</div>
+    <div class="sf-right">QueueLess &nbsp;<span>·</span>&nbsp; Academic Presentation 2025</div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+</body>
+</html>
+

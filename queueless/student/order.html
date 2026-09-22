@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Confirmed — QueueLess</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .confirm-wrap{min-height:calc(100vh - 65px); display:flex; align-items:center; justify-content:center; padding:40px 20px;}
+  .confirm-card{width:100%; max-width:440px; text-align:center;}
+  .confirm-check{width:56px; height:56px; border-radius:50%; background:var(--teal-tint); color:var(--teal); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;}
+  .confirm-card h1{font-size:24px; margin-bottom:4px;}
+  .confirm-card p.sub{color:var(--ink-soft); font-size:13.5px; margin-bottom:26px;}
+  .order-id-tag{font-family:var(--font-mono); font-size:14px; font-weight:700; background:var(--paper-dim); display:inline-block; padding:6px 16px; border-radius:999px; margin-bottom:22px;}
+  .token-label{font-size:12px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:12px;}
+  .qr-box{width:150px; height:150px; margin:22px auto; border-radius:var(--radius-m); background:
+      repeating-linear-gradient(45deg, var(--ink) 0 6px, transparent 6px 12px),
+      repeating-linear-gradient(-45deg, var(--ink) 0 6px, transparent 6px 12px);
+      background-blend-mode:multiply; background-color:#fff; border:1.5px solid var(--line); position:relative;}
+  .qr-box::before{content:''; position:absolute; inset:14px; background:#fff; border-radius:6px;}
+  .qr-box::after{content:'QR'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; color:var(--ink); font-size:13px;}
+  .confirm-meta{display:flex; justify-content:space-around; margin:22px 0; text-align:center;}
+  .confirm-meta .l{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);}
+  .confirm-meta .v{font-family:var(--font-mono); font-weight:700; font-size:16px; margin-top:4px;}
+  .notify-note{background:var(--amber-tint); color:var(--amber-dark); font-size:13px; padding:12px 16px; border-radius:var(--radius-s); margin-top:22px; display:flex; align-items:center; gap:8px; justify-content:center;}
+  .order-summary-box{margin:22px 0 14px;text-align:left;border:1px solid var(--line);border-radius:14px;background:var(--paper-dim);overflow:hidden;}
+  .order-summary-title{display:flex;justify-content:space-between;padding:12px 14px;font-size:12px;font-weight:700;border-bottom:1px solid var(--line);color:var(--ink-mid);}
+  .order-summary-items{padding:4px 14px;}
+  .order-summary-items>div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .order-summary-items>div:last-child{border-bottom:0;}
+  .order-summary-items strong{font-family:var(--font-mono);font-size:12px;}
+  .order-confirm-actions{display:flex;flex-direction:column;gap:8px;}
+
+  .track-summary-box{margin:14px 0;text-align:left;border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden;}
+  .track-summary-title{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;font-size:12px;font-weight:700;border-bottom:1px solid var(--line);color:var(--ink-mid);}
+  .track-summary-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);}
+  .track-summary-row:last-child{border-bottom:0;}
+  .track-summary-row>div{min-width:0;display:flex;flex-direction:column;gap:3px;}
+  .track-summary-row strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .track-summary-row span{font-size:11px;color:var(--ink-soft);}
+  @media(max-width:600px){.track-summary-row .btn{flex-shrink:0;}.track-summary-row{padding:11px 12px;}}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="nav-links"><a href="dashboard.html">Home</a><a href="menu.html">Menu</a><a href="history.html">Orders</a></div>
+    <div class="nav-right"><a href="profile.html" class="avatar" id="nav-avatar" aria-label="Profile">A</a></div>
+  </div>
+</nav>
+
+<div class="container page-exit-row confirm-exit"><a href="dashboard.html" class="page-back"><i data-lucide="arrow-left"></i> Back to home</a><a href="history.html" class="page-back">Order history</a></div>
+<div class="confirm-wrap">
+  <div class="confirm-card" id="confirm-card"></div>
+</div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/orders.js"></script>
+<script>if(!qlRequireRole('student')){throw new Error('Unauthorized');}</script>
+<script src="../js/app.js"></script>
+<script>
+  const user = qlGetUser(); const navAvatar = document.getElementById('nav-avatar'); if(navAvatar) navAvatar.textContent = (user.name||'S').charAt(0).toUpperCase();
+  const id = new URLSearchParams(window.location.search).get('id');
+  const order = qlGetOrder(id);
+  const card = document.getElementById('confirm-card');
+
+  if(order && !qlCanAccessOrder(order)) {
+    card.innerHTML = `<div class="empty-state"><p>This order belongs to another account.</p><a href="dashboard.html" class="btn btn-primary btn-sm mt-16">Go Home</a></div>`;
+  } else if(!order){
+    card.innerHTML = `<div class="empty-state"><p>Order not found.</p><a href="dashboard.html" class="btn btn-primary btn-sm mt-16">Go Home</a></div>`;
+  } else {
+    if(typeof qlProcessItemReadiness==='function') qlProcessItemReadiness();
+    const qPos = qlQueuePosition(order.id);
+    const tokenDigits = order.token.padStart(3,'0').split('');
+    card.innerHTML = `
+      <div class="confirm-check"><i data-lucide="check" style="width:26px;height:26px;"></i></div>
+      <h1>Order Confirmed</h1>
+      <p class="sub">This order is in the kitchen queue. Each item has its own tracking status.</p>
+      <div class="order-id-tag">ORDER #${order.id}</div>
+
+      <div class="token-label">Pickup Token</div>
+      <div class="flap-row" style="justify-content:center;">
+        ${tokenDigits.map(d=>`<div class="flap flap-lg">${d}</div>`).join('')}
+      </div>
+
+      <div class="qr-box"></div>
+      <p class="text-xs muted">Show this QR code or pickup token when collecting your order.</p>
+
+      <div class="confirm-meta">
+        <div><div class="l">Pickup</div><div class="v">${order.pickupTime}</div><div class="text-xs muted">${order.pickupDateLabel || "Today"}</div></div>
+        <div><div class="l">Queue Position</div><div class="v">${qPos}</div></div>
+      </div>
+
+      <div class="order-summary-box">
+        <div class="order-summary-title"><span>Order summary</span><span>${(order.items||[]).reduce((n,i)=>n+Number(i.qty||0),0)} items</span></div>
+        <div class="order-summary-items">${(order.items||[]).map(i=>{ const m=(typeof qlGetMenu==='function'?qlGetMenu():[]).find(x=>x.id===i.id); const name=m?.name||i.name||'Item'; const price=Number(m?.price??i.price??0); return `<div><span>${name} × ${Number(i.qty||0)}</span><strong>₹${price*Number(i.qty||0)}</strong></div>`; }).join('')}</div>
+      </div>
+      <div class="order-confirm-actions">
+        <a href="history.html" class="btn btn-primary btn-block">View My Orders <i data-lucide="arrow-right"></i></a>
+        <a href="dashboard.html" class="btn btn-outline btn-block">Continue Ordering</a>
+      </div>
+
+      <div class="track-summary-box">
+        <div class="track-summary-title"><span>Track your items</span><span>${(order.itemTracks||[]).length} tracked</span></div>
+        ${(order.itemTracks||[]).map(t=>{const m=(typeof qlGetMenu==='function'?qlGetMenu():[]).find(x=>x.id===t.id);const label=QL_STATUS_LABEL[t.status]||t.status;return `<div class="track-summary-row"><div><strong>${m?.name||'Item'} × ${Number(t.qty||0)}</strong><span>${t.counterName||'Canteen Counter'}</span></div><a href="track.html?id=${encodeURIComponent(order.id)}&track=${encodeURIComponent(t.trackId)}" class="btn btn-outline btn-sm">Track <i data-lucide="chevron-right"></i></a></div>`;}).join('')}
+      </div>
+
+      <div class="notify-note"><i data-lucide="bell" style="width:14px;height:14px;"></i> Each item can become ready separately. You'll get a pickup alert when it is ready.</div><button type="button" id="enable-alerts" class="btn btn-outline btn-block mt-12">Enable pickup notifications</button>
+    `;
+    qlIcons();
+    const alertBtn=document.getElementById('enable-alerts');
+    if(alertBtn){ alertBtn.addEventListener('click', async()=>{ try{ if('Notification' in window){ const p=await Notification.requestPermission(); alertBtn.textContent=p==='granted'?'Pickup notifications enabled':p==='denied'?'Notifications blocked':'Notifications not enabled'; } }catch(e){ alertBtn.textContent='Notifications unavailable'; } }); }
+  }
+</script>
+</body>
+</html>
