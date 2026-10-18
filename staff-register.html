@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Staff access request — QueueLess</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .auth-card{width:100%;max-width:440px;}
+  .auth-brand{display:flex;align-items:center;gap:9px;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:20px;margin-bottom:26px;}
+  .auth-card .card{padding:32px;}
+  .auth-card h1{font-size:22px;margin-bottom:6px;}
+  .auth-card p.sub{color:var(--ink-soft);font-size:13.5px;margin-bottom:20px;}
+  .auth-foot{text-align:center;margin-top:20px;font-size:13.5px;color:var(--ink-soft);}
+  .auth-foot a{color:var(--ink);font-weight:600;}
+  .notice{padding:12px 13px;margin-bottom:18px;border-radius:10px;background:var(--near-white);border:1px solid var(--line);color:var(--ink-soft);font-size:12px;line-height:1.5;}
+  .field select{width:100%;}
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <main class="auth-card">
+    <a href="index.html" class="auth-brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="card">
+      <h1>Request staff access</h1>
+      <p class="sub">Create an account and choose the counter you work at. An admin must approve your request before staff tools are available.</p>
+      <div class="notice">Use your <strong>@somaiya.edu</strong> email to sign in. Email confirmation must be disabled in Supabase Auth for this no-OTP signup flow. Your staff access stays locked until an admin approves it.</div>
+      <form id="staff-register-form">
+        <div class="field"><label for="staff-name">Full name</label><input id="staff-name" type="text" required minlength="2" maxlength="100" autocomplete="name"></div>
+        <div class="field"><label for="staff-email">College email</label><input id="staff-email" type="email" required autocomplete="email" pattern="[^@\s]+@somaiya\.edu" title="Use your college email ending in @somaiya.edu."></div>
+        <div class="field"><label for="staff-password">Password</label><input id="staff-password" type="password" required minlength="8" autocomplete="new-password"><small>At least 8 characters, including one uppercase letter and one special character.</small></div>
+        <div class="field"><label for="staff-counter">Your counter</label><select id="staff-counter" required>
+          <option value="">Choose your counter</option>
+          <option value="C1">Counter 1 — Snacks &amp; desserts</option>
+          <option value="C2">Counter 2 — Frankie &amp; juices</option>
+          <option value="C3">Counter 3 — Chaat</option>
+          <option value="C4">Counter 4 — Main canteen</option>
+        </select></div>
+        <p id="staff-register-message" role="status" style="display:none;margin:0 0 12px;font-size:13px;color:var(--crimson-dark)"></p>
+        <button id="staff-register-button" class="btn btn-amber btn-block" type="submit">Submit staff request</button>
+      </form>
+    </div>
+    <p class="auth-foot">Already requested access? <a href="login.html">Sign in</a></p>
+    <p class="auth-foot" style="margin-top:8px;">Student? <a href="register.html">Create a student account</a></p>
+  </main>
+</div>
+<script src="js/supabase-auth.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  const staffForm=document.getElementById('staff-register-form');
+  const staffMessage=document.getElementById('staff-register-message');
+  staffForm.addEventListener('submit',async event=>{
+    event.preventDefault();
+    const name=document.getElementById('staff-name').value.trim();
+    const email=document.getElementById('staff-email').value.trim();
+    const password=document.getElementById('staff-password').value;
+    const requestedCounter=document.getElementById('staff-counter').value;
+    const button=document.getElementById('staff-register-button');
+    button.disabled=true;
+    button.textContent='Submitting request…';
+    staffMessage.style.display='none';
+    try{
+      try{
+        await window.qlAuth.registerStaff({name,email,password,requestedCounter});
+      }catch(signupError){
+        if(signupError.status!==409)throw signupError;
+      }
+      const user=await window.qlAuth.signIn(email,password);
+      if(user.role==='student'){
+        await window.qlAuth.requestStaffAccess(requestedCounter);
+        Object.assign(user,{requestedRole:'staff',requestedCounter,pendingApproval:true});
+        localStorage.setItem('ql_user',JSON.stringify(user));
+      }
+      window.location.replace(qlRoleHome(user.role,user));
+    }catch(error){
+      staffMessage.textContent=error.data?.verificationRequired
+        ? 'Supabase requires email confirmation for this account. Ask the administrator to disable email confirmations in Supabase Auth, then try again.'
+        : error.message||'Could not submit staff request.';
+      staffMessage.style.display='block';
+      button.disabled=false;
+      button.textContent='Submit staff request';
+    }
+  });
+</script>
+</body>
+</html>

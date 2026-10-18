@@ -40,7 +40,7 @@
           <div class="field"><label>College email</label><input type="email" id="email" placeholder="arya@somaiya.edu" pattern="[^@\s]+@somaiya\.edu" title="Use your college email ending in @somaiya.edu." required autocomplete="email"></div>
           <div class="field"><label>Roll number</label><input type="text" id="roll" placeholder="e.g. 21CSB045"></div>
           <div class="field"><label>Password</label><input type="password" id="password" placeholder="••••••••" minlength="8" required autocomplete="new-password"><small>At least 8 characters, including one uppercase letter and one special character.</small></div>
-          <div class="demo-note">Staff accounts are created by an administrator, not through student registration. Ask an administrator to create your confirmed Somaiya account and assign your counter; then sign in with the account they provide. No OTP signup step is needed for staff.</div>
+          <div class="demo-note">Staff should use the separate staff access request form. Staff accounts remain pending until an administrator approves the requested counter.</div>
           <p id="auth-message" role="status" style="display:none;margin:0 0 12px;font-size:13px;color:var(--crimson-dark)"></p>
           <button type="submit" class="btn btn-amber btn-block" id="register-btn">Create Account <i data-lucide="arrow-right"></i></button>
         </form>
@@ -68,6 +68,7 @@
 
     </div>
     <p class="auth-foot">Already have an account? <a href="login.html">Log in</a></p>
+    <p class="auth-foot" style="margin-top:8px;">Staff member? <a href="staff-register.html">Request staff access</a></p>
   </div>
 </div>
 
@@ -99,7 +100,7 @@
     try{
       const result=await window.qlAuth.signUp({name,email,password,rollNumber});
       if(result.verificationRequired)showOtpStep(email);
-      else{const user=await window.qlAuth.signIn(email,password);window.location.href=qlRoleHome(user.role);}
+      else{const user=await window.qlAuth.signIn(email,password);window.location.href=qlRoleHome(user.role,user);}
     } catch(err){showMsg('auth-message',err.message||'Could not create account.');btn.disabled=false;btn.textContent='Create Account';}
   });
 
@@ -109,7 +110,7 @@
     try{
       await window.qlAuth.verifyOtp(_regEmail,otp);
       showMsg('otp-message','Verified! Logging you in…',true);
-      try{const user=await window.qlAuth.signIn(_regEmail,_regPassword);window.location.href=qlRoleHome(user.role);}
+      try{const user=await window.qlAuth.signIn(_regEmail,_regPassword);window.location.href=qlRoleHome(user.role,user);}
       catch{window.location.href='login.html?verified=1';}
     } catch(err){
       showMsg('otp-message',err.message||'Incorrect code. Try again.');

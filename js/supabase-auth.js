@@ -54,6 +54,7 @@
     }
     if (!response.ok) {
       const error = new Error(data.error || `Request failed (${response.status}).`);
+      error.status = response.status;
       error.data = data;
       throw error;
     }
@@ -61,10 +62,24 @@
   }
 
   window.qlAuth = {
-    async signUp({ name, email, password, rollNumber, requestedRole = 'student', requestedCounter = null }) {
+    async signUp({ name, email, password, rollNumber }) {
       return request('/auth/register', {
         method: 'POST',
-        body: { name, email, password, rollNumber, requestedRole, requestedCounter }
+        body: { name, email, password, rollNumber }
+      });
+    },
+
+    async registerStaff({ name, email, password, requestedCounter }) {
+      return request('/auth/register-staff', {
+        method: 'POST',
+        body: { name, email, password, requestedCounter }
+      });
+    },
+
+    async requestStaffAccess(requestedCounter) {
+      return request('/auth/staff-request', {
+        method: 'POST',
+        body: { requestedCounter }
       });
     },
 

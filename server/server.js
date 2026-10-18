@@ -60,6 +60,7 @@ function sendError(res, error, fallback) {
     INVALID_QUANTITY: [400, 'Item quantities must be between 1 and 99.'],
     MENU_ITEM_UNAVAILABLE: [409, 'One or more menu items are unavailable. Refresh the menu.'],
     STAFF_COUNTER_REQUIRED: [400, 'Assign a counter to staff accounts.'],
+    STUDENT_ACCOUNT_REQUIRED: [409, 'Only a student account can request staff access.'],
     INVALID_ROLE: [400, 'Choose a valid account role.'],
     PROFILE_NOT_FOUND: [404, 'Account not found.']
   };
@@ -112,7 +113,7 @@ async function authenticate(req, { optional = false } = {}) {
   const db = userClient(token);
   const { data: profile, error: profileError } = await db
     .from('ql_profiles')
-    .select('user_id,full_name,phone,roll_number,role,counter_id')
+    .select('user_id,full_name,phone,roll_number,role,counter_id,requested_role,requested_counter')
     .eq('user_id', data.user.id)
     .single();
   if (profileError || !profile) throw profileLookupFailure(profileError);
@@ -128,9 +129,16 @@ const auth = asyncRoute(async (req, _res, next) => {
   next();
 }, 'Could not verify your session.');
 
+function rejectPendingStaffRequest(req) {
+  if (req.profile.role === 'student' && req.profile.requested_role === 'staff') {
+    throw new HttpError(403, 'Your staff access request is awaiting admin approval.');
+  }
+}
+
 function roles(...allowed) {
   return asyncRoute(async (req, res, next) => {
     await authenticate(req);
+    rejectPendingStaffRequest(req);
     if (!allowed.includes(req.profile.role)) {
       throw new HttpError(403, 'You do not have permission for this action.');
     }
@@ -153,6 +161,9 @@ function mapUser(user, profile) {
     email: user.email,
     role: profile.role,
     counterId: profile.counter_id,
+    requestedRole: profile.requested_role,
+    requestedCounter: profile.requested_counter,
+    pendingApproval: profile.role === 'student' && profile.requested_role === 'staff',
     verified: Boolean(user.email_confirmed_at || user.confirmed_at)
   };
 }
@@ -251,6 +262,43 @@ app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
   });
 }, 'Could not create account.'));
 
+app.post('/api/auth/register-staff', authLimiter, asyncRoute(async (req, res) => {
+  const name = validateProfileName(req.body?.name);
+  const email = requireSomaiyaEmail(req.body?.email);
+  const password = String(req.body?.password || '');
+  const passwordError = getPasswordPolicyError(password);
+  if (passwordError) throw new HttpError(400, passwordError);
+  const requestedCounter = validateCounter(req.body?.requestedCounter);
+  const { data, error } = await publicAuthClient().auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: name,
+        roll_number: '',
+        requested_role: 'staff',
+        requested_counter: requestedCounter
+      }
+    }
+  });
+  if (error) throw new HttpError(error.status === 422 ? 409 : 400, error.message);
+  res.status(201).json({
+    message: 'Staff request submitted. Sign in after the admin approves your request.',
+    email,
+    approvalRequired: true,
+    verificationRequired: !data.session
+  });
+}, 'Could not submit staff request.'));
+
+app.post('/api/auth/staff-request', auth, asyncRoute(async (req, res) => {
+  const requestedCounter = validateCounter(req.body?.requestedCounter);
+  const { error } = await req.db.rpc('ql_request_staff_access', {
+    p_counter_id: requestedCounter
+  });
+  if (error) throw error;
+  res.json({ ok: true, message: 'Staff request submitted. Your account is pending admin approval.' });
+}, 'Could not submit staff request.'));
+
 app.post('/api/auth/verify-otp', otpLimiter, asyncRoute(async (req, res) => {
   const email = requireSomaiyaEmail(req.body?.email);
   const token = String(req.body?.otp || '').trim().replace(/\s/g, '');
@@ -284,7 +332,7 @@ app.post('/api/auth/login', authLimiter, asyncRoute(async (req, res) => {
   }
   const { data: profile, error: profileError } = await userClient(data.session.access_token)
     .from('ql_profiles')
-    .select('user_id,full_name,phone,roll_number,role,counter_id')
+    .select('user_id,full_name,phone,roll_number,role,counter_id,requested_role,requested_counter')
     .eq('user_id', data.user.id)
     .single();
   if (profileError || !profile) throw profileLookupFailure(profileError);
@@ -303,7 +351,7 @@ app.post('/api/auth/refresh', authLimiter, asyncRoute(async (req, res) => {
   if (!isSomaiyaEmail(data.user.email || '')) throw new HttpError(403, 'Use an account ending in @somaiya.edu.');
   const { data: profile, error: profileError } = await userClient(data.session.access_token)
     .from('ql_profiles')
-    .select('user_id,full_name,phone,roll_number,role,counter_id')
+    .select('user_id,full_name,phone,roll_number,role,counter_id,requested_role,requested_counter')
     .eq('user_id', data.user.id)
     .single();
   if (profileError || !profile) throw profileLookupFailure(profileError);
@@ -341,7 +389,7 @@ app.patch('/api/auth/profile', auth, asyncRoute(async (req, res) => {
   if (!Object.keys(updates).length) throw new HttpError(400, 'Provide profile details to update.');
   const { data: profile, error } = await req.db.from('ql_profiles')
     .update(updates).eq('user_id', req.auth.id)
-    .select('user_id,full_name,phone,roll_number,role,counter_id').single();
+    .select('user_id,full_name,phone,roll_number,role,counter_id,requested_role,requested_counter').single();
   if (error) throw error;
   res.json({ user: mapUser(req.auth, profile) });
 }, 'Could not update profile.'));
@@ -415,6 +463,9 @@ app.post('/api/admin/staff-access/approve', roles('admin'), asyncRoute(async (re
   });
   if (lookupError) throw lookupError;
   if (!matches.length) throw new HttpError(404, 'No registered account was found for that email.');
+  if (matches[0].requested_role !== 'staff') {
+    throw new HttpError(409, 'This account has not submitted a staff access request.');
+  }
   const { data, error } = await req.db.rpc('ql_admin_update_profile', {
     p_user_id: matches[0].user_id,
     p_role: 'staff',
@@ -530,6 +581,7 @@ app.post('/api/orders', roles('student', 'staff', 'admin'), asyncRoute(async (re
 }, 'Could not create order.'));
 
 app.get('/api/orders/mine', auth, asyncRoute(async (req, res) => {
+  rejectPendingStaffRequest(req);
   const { data, error } = await req.db.from('ql_orders')
     .select(orderSelect).eq('user_id', req.auth.id)
     .order('created_at', { ascending: false }).limit(100);
@@ -560,6 +612,8 @@ app.patch('/api/orders/:orderId/items/:itemId/status', roles('staff', 'admin'), 
 
 app.get('/login', (_req, res) => res.redirect(302, '/login.html'));
 app.get('/register', (_req, res) => res.redirect(302, '/register.html'));
+app.get('/staff-register', (_req, res) => res.redirect(302, '/staff-register.html'));
+app.get('/staff-pending', (_req, res) => res.redirect(302, '/staff-pending.html'));
 app.get('/student/dashboard', (_req, res) => res.redirect(302, '/student/dashboard.html'));
 app.get('/staff/dashboard', (_req, res) => res.redirect(302, '/staff/dashboard.html'));
 app.get('/admin/dashboard', (_req, res) => res.redirect(302, '/admin/dashboard.html'));

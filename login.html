@@ -78,7 +78,8 @@
       </div>
 
     </div>
-    <p class="auth-foot">New to QueueLess? <a href="register.html">Create an account</a></p>
+    <p class="auth-foot">New to QueueLess? <a href="register.html">Create a student account</a></p>
+    <p class="auth-foot" style="margin-top:8px;">Staff member? <a href="staff-register.html">Request staff access</a></p>
   </div>
 </div>
 
@@ -162,7 +163,7 @@ loginForm.addEventListener('submit', async e => {
       email,
       document.getElementById('password').value
     );
-    window.location.href = qlRoleHome(user.role);
+    window.location.href = qlRoleHome(user.role, user);
   } catch(err){
     const d = err.data || {};
     if(d.verificationRequired){
@@ -194,7 +195,7 @@ document.getElementById('otp-submit-btn').addEventListener('click', async () => 
           _pendingEmail,
           document.getElementById('password').value
         );
-        window.location.href = qlRoleHome(user.role);
+        window.location.href = qlRoleHome(user.role, user);
       } catch(e2){
         showLoginPanel();
         showAuthMsg('Verified! Please log in with your password.');

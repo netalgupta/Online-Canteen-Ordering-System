@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const server = read('server/server.js');
 const migration = read('supabase/migrations/20261018000000_queueless_supabase_api.sql');
+const staffRequestMigration = read('supabase/migrations/20261019000000_queueless_staff_requests.sql');
 const coreMigration = read('supabase/migrations/20261015072637_queueless_core_backend.sql');
 
 test('the active app starts Express with Supabase and no Mongo runtime dependencies', () => {
@@ -54,11 +55,32 @@ test('public signup is student-only and enforces Somaiya/password rules', async 
   assert.match(server, /if \(!isSomaiyaEmail\(email\)\)/);
   assert.match(server, /getPasswordPolicyError\(password\)/);
   assert.match(server, /requested_role: 'student'/);
+  assert.match(server, /app\.post\('\/api\/auth\/register-staff'/);
+  assert.match(server, /requested_role: 'staff'/);
+  assert.match(server, /requested_counter: requestedCounter/);
+  assert.match(server, /rejectPendingStaffRequest\(req\)/);
+  assert.match(server, /matches\[0\]\.requested_role !== 'staff'/);
+  assert.match(server, /app\.post\('\/api\/auth\/staff-request', auth/);
+  assert.match(server, /rpc\('ql_request_staff_access'/);
+  assert.match(server, /Your staff access request is awaiting admin approval/);
+  assert.match(staffRequestMigration, /auth\.uid\(\) is null/);
+  assert.match(staffRequestMigration, /public\.ql_my_role\(\) <> 'student'/);
+  assert.match(staffRequestMigration, /grant execute on function public\.ql_request_staff_access\(text\) to authenticated/);
+  assert.match(staffRequestMigration, /requested_role = 'student',\s+requested_counter = null/);
   assert.match(migration, /'student',\s*coalesce\(v_requested_role,'student'\)/);
   const registration = read('register.html');
   assert.doesNotMatch(registration, /name="role"|value="staff"|value="admin"|requestedRole:role/);
-  assert.match(registration, /Staff accounts are created by an administrator/);
-  assert.match(read('admin/staff-access.html'), /create a confirmed account in Supabase Dashboard/i);
+  const staffRegistration = read('staff-register.html');
+  assert.match(staffRegistration, /requestedCounter/);
+  assert.match(staffRegistration, /registerStaff/);
+  assert.match(staffRegistration, /requestStaffAccess/);
+  assert.match(staffRegistration, /signupError\.status!==409/);
+  assert.match(staffRegistration, /qlRoleHome\(user\.role,user\)/);
+  assert.match(read('js/auth.js'), /pendingApproval\)return '\/staff-pending\.html'/);
+  assert.match(read('staff-pending.html'), /Refresh approval status/);
+  assert.match(read('admin/staff-access.js'), /Staff request pending/);
+  assert.match(read('admin/staff-access.js'), /Review request/);
+  assert.match(read('admin/staff-access.html'), /Review staff access requests/);
 });
 
 test('OTP routes are rate-limited and use Supabase Auth verification/resend', () => {
@@ -103,6 +125,7 @@ test('browser pages use the same-origin API adapter without a hard-coded Supabas
   assert.match(backend, /ql_supabase_refresh_token/);
   assert.match(backend, /\/auth\/refresh/);
   assert.match(backend, /\/orders\/mine/);
+  assert.match(backend, /currentUser\.pendingApproval/);
   assert.match(backend, /\/orders\/queue/);
   assert.match(backend, /\/menu/);
   assert.doesNotMatch(auth, /supabase\.co|publishable|anon key/i);
@@ -122,7 +145,7 @@ test('clean login and registration URLs redirect to their static pages', () => {
 });
 
 test('inline JavaScript in auth and staff-access pages parses', () => {
-  for (const file of ['login.html', 'register.html', 'admin/staff-access.html']) {
+  for (const file of ['login.html', 'register.html', 'staff-register.html', 'staff-pending.html', 'admin/staff-access.html']) {
     const html = read(file);
     const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
       .map(match => match[1])
@@ -130,6 +153,9 @@ test('inline JavaScript in auth and staff-access pages parses', () => {
     for (const [index, source] of scripts.entries()) {
       assert.doesNotThrow(() => new vm.Script(source, { filename: `${file} inline script ${index + 1}` }));
     }
+  }
+  for (const file of ['admin/staff-access.js', 'js/supabase-auth.js', 'js/auth.js', 'js/backend.js']) {
+    assert.doesNotThrow(() => new vm.Script(read(file), { filename: file }));
   }
 });
 

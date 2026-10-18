@@ -133,6 +133,11 @@
       const currentUser = { ...user, approved: true };
       localStorage.setItem('ql_user', JSON.stringify(currentUser));
 
+      if (currentUser.pendingApproval) {
+        window.dispatchEvent(new CustomEvent('ql:backend-ready', { detail: { user: currentUser } }));
+        return currentUser;
+      }
+
       if (user.role === 'staff' || user.role === 'admin') {
         const { orders } = await call('/orders/queue');
         window.QL_STAFF_QUEUE = (orders || []).map(mapOrder);

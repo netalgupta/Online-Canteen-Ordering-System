@@ -9,9 +9,9 @@ QueueLess is a vanilla HTML/CSS/JavaScript canteen-ordering app served by an Exp
 
 ## Configure Supabase
 
-1. Apply the SQL migrations in filename order, including `20261018000000_queueless_supabase_api.sql`. They add QueueLess-specific tables and functions; they do not replace the legacy SkipQ tables.
+1. Apply the SQL migrations in filename order, including `20261018000000_queueless_supabase_api.sql` and `20261019000000_queueless_staff_requests.sql`. They add QueueLess-specific tables and functions; they do not replace the legacy SkipQ tables.
 2. Run `supabase/seed.sql` once in the Supabase SQL editor to add the initial QueueLess menu.
-3. In Supabase Auth, allow the local URL `http://localhost:3000`. For six-digit signup codes, configure the signup email template to include `{{ .Token }}`; verification emails are sent by Supabase Auth.
+3. In Supabase Auth, allow the local URL `http://localhost:3000`. To use the no-OTP staff request flow, disable email confirmations under Authentication → Providers → Email. This is a project-wide setting: student signup will also skip email confirmation. Keep strong passwords and approve staff access only after checking each request.
 4. Register a Somaiya account through QueueLess. Promote the first trusted admin from the Supabase SQL editor:
 
    ```sql
@@ -22,7 +22,7 @@ QueueLess is a vanilla HTML/CSS/JavaScript canteen-ordering app served by an Exp
      and lower(u.email) = lower('YOUR_ADMIN_EMAIL');
    ```
 
-The app enforces `@somaiya.edu` addresses and passwords with at least eight characters, an uppercase letter, and a special character. Public registration is for students only. Staff accounts are created by an administrator as confirmed Supabase Auth users, then granted staff access and a counter through the staff-access page; staff do not use student registration or OTP signup.
+The app enforces `@somaiya.edu` addresses and passwords with at least eight characters, an uppercase letter, and a special character. Public registration is for students only; staff use the separate `staff-register.html` page to create an account and request a counter. Existing students can also sign in there and submit a staff request. Requests remain locked to staff tools until an admin approves them in Staff Access. Admin signup is not public: promote the initial trusted admin account using the SQL step above.
 
 ## Run locally
 

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Staff request pending — QueueLess</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .pending-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .pending-card{width:100%;max-width:480px;text-align:center;padding:36px;}
+  .pending-mark{width:54px;height:54px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;background:var(--crimson-tint);color:var(--crimson-dark);font-size:26px;font-weight:700;}
+  .pending-card h1{font-size:23px;margin-bottom:8px;}
+  .pending-card p{color:var(--ink-soft);font-size:14px;line-height:1.6;margin-bottom:20px;}
+</style>
+</head>
+<body>
+<main class="pending-wrap">
+  <section class="card pending-card">
+    <div class="pending-mark" aria-hidden="true">…</div>
+    <h1 id="pending-title">Staff access pending</h1>
+    <p id="pending-message">Your request is waiting for an administrator to approve your account and counter. Staff tools will be available after approval.</p>
+    <p id="pending-name" class="text-sm"></p>
+    <button class="btn btn-outline" type="button" onclick="location.reload()">Refresh approval status</button>
+    <button class="btn btn-amber" type="button" style="margin-left:8px" onclick="qlLogout()">Log out</button>
+  </section>
+</main>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/backend.js"></script>
+<script>
+  if(qlRequireAuth()){
+    const user=JSON.parse(localStorage.getItem('ql_user')||'{}');
+    document.getElementById('pending-name').textContent=user.name?`Signed in as ${user.name}`:'';
+    window.QL_BACKEND_READY?.then(updated=>{
+      if(updated?.role==='staff')window.location.replace('/staff/dashboard.html');
+      else if(updated?.role==='admin')window.location.replace('/admin/dashboard.html');
+      else if(!updated)document.getElementById('pending-message').textContent='Could not check approval status. Refresh this page or sign in again.';
+    });
+  }
+</script>
+</body>
+</html>
