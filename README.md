@@ -9,20 +9,20 @@ QueueLess is a vanilla HTML/CSS/JavaScript canteen-ordering app served by an Exp
 
 ## Configure Supabase
 
-1. Apply the SQL migrations in filename order, including `20261018000000_queueless_supabase_api.sql` and `20261019000000_queueless_staff_requests.sql`. They add QueueLess-specific tables and functions; they do not replace the legacy SkipQ tables.
+1. Apply the SQL migrations in filename order, including `20261018000000_queueless_supabase_api.sql`, `20261019000000_queueless_staff_requests.sql`, and `20261020000000_queueless_fixed_admin.sql`. They add QueueLess-specific tables and functions; they do not replace the legacy SkipQ tables.
 2. Run `supabase/seed.sql` once in the Supabase SQL editor to add the initial QueueLess menu.
 3. In Supabase Auth, allow the local URL `http://localhost:3000`. To use the no-OTP staff request flow, disable email confirmations under Authentication → Providers → Email. This is a project-wide setting: student signup will also skip email confirmation. Keep strong passwords and approve staff access only after checking each request.
-4. Register a Somaiya account through QueueLess. Promote the first trusted admin from the Supabase SQL editor:
+4. Create the account for `arya.km@somaiya.edu` through QueueLess, then promote it from the trusted Supabase SQL editor:
 
    ```sql
    update public.ql_profiles p
    set role = 'admin', counter_id = null
    from auth.users u
    where u.id = p.user_id
-     and lower(u.email) = lower('YOUR_ADMIN_EMAIL');
+     and lower(u.email) = 'arya.km@somaiya.edu';
    ```
 
-The app enforces `@somaiya.edu` addresses and passwords with at least eight characters, an uppercase letter, and a special character. Public registration is for students only; staff use the separate `staff-register.html` page to create an account and request a counter. Existing students can also sign in there and submit a staff request. Requests remain locked to staff tools until an admin approves them in Staff Access. Admin signup is not public: promote the initial trusted admin account using the SQL step above.
+The app enforces `@somaiya.edu` addresses and passwords with at least eight characters, an uppercase letter, and a special character. Public registration is for students only; staff use the separate `staff-register.html` page to create an account and request a counter. Existing students can also sign in there and submit a staff request. Requests remain locked to staff tools until an admin approves them in Staff Access. Admin signup is not public: only `arya.km@somaiya.edu` can be granted the admin role through the app's role-management RPC, and the initial account must be promoted using the trusted SQL step above. Do not automatically elevate users based on an unconfirmed email address.
 
 ## Run locally
 

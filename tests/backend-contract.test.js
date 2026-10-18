@@ -102,6 +102,12 @@ test('role and email changes are protected by narrow profile grants and admin RP
   assert.match(server, /roles\('admin'\)/);
 });
 
+test('only the designated email can be granted admin access by the admin RPC', () => {
+  const migration = read('supabase/migrations/20261020000000_queueless_fixed_admin.sql');
+  assert.match(migration, /p_role = 'admin' and not exists[\s\S]*lower\(u\.email\) = 'arya\.km@somaiya\.edu'/);
+  assert.match(read('README.md'), /and lower\(u\.email\) = 'arya\.km@somaiya\.edu'/);
+});
+
 test('menu and order handlers use the existing RLS-protected tables and RPCs', () => {
   assert.match(server, /from\('ql_menu_items'\)/);
   assert.match(server, /rpc\('ql_admin_save_menu_item'/);

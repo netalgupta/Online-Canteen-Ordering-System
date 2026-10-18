@@ -62,7 +62,8 @@ function sendError(res, error, fallback) {
     STAFF_COUNTER_REQUIRED: [400, 'Assign a counter to staff accounts.'],
     STUDENT_ACCOUNT_REQUIRED: [409, 'Only a student account can request staff access.'],
     INVALID_ROLE: [400, 'Choose a valid account role.'],
-    PROFILE_NOT_FOUND: [404, 'Account not found.']
+    PROFILE_NOT_FOUND: [404, 'Account not found.'],
+    FIXED_ADMIN_EMAIL_REQUIRED: [403, 'Only the designated admin email can have admin access.']
   };
   const match = Object.entries(knownErrors).find(([key]) => message.includes(key));
   if (match) return res.status(match[1][0]).json({ error: match[1][1] });
