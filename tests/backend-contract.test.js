@@ -41,7 +41,7 @@ test('authenticated API requests verify the Supabase user and query their RLS-sc
   assert.match(server, /No QueueLess profile was found/);
 });
 
-test('signup enforces Somaiya/password rules and stores role selections as requests only', async () => {
+test('public signup is student-only and enforces Somaiya/password rules', async () => {
   const { getPasswordPolicyError, isSomaiyaEmail } = await import('../server/src/utils/authValidation.js');
   assert.equal(isSomaiyaEmail('student@somaiya.edu'), true);
   assert.equal(isSomaiyaEmail('STUDENT@SOMAIYA.EDU'), true);
@@ -53,9 +53,12 @@ test('signup enforces Somaiya/password rules and stores role selections as reque
   assert.match(getPasswordPolicyError('Short!A'), /8 characters/i);
   assert.match(server, /if \(!isSomaiyaEmail\(email\)\)/);
   assert.match(server, /getPasswordPolicyError\(password\)/);
-  assert.match(server, /requested_role: requestedRole/);
+  assert.match(server, /requested_role: 'student'/);
   assert.match(migration, /'student',\s*coalesce\(v_requested_role,'student'\)/);
-  assert.match(read('register.html'), /requestedRole:role/);
+  const registration = read('register.html');
+  assert.doesNotMatch(registration, /name="role"|value="staff"|value="admin"|requestedRole:role/);
+  assert.match(registration, /Staff accounts are created by an administrator/);
+  assert.match(read('admin/staff-access.html'), /create a confirmed account in Supabase Dashboard/i);
 });
 
 test('OTP routes are rate-limited and use Supabase Auth verification/resend', () => {

@@ -22,7 +22,7 @@ QueueLess is a vanilla HTML/CSS/JavaScript canteen-ordering app served by an Exp
      and lower(u.email) = lower('YOUR_ADMIN_EMAIL');
    ```
 
-The app enforces `@somaiya.edu` addresses and passwords with at least eight characters, an uppercase letter, and a special character. Every public signup starts as a student; the requested role is only a request. An admin grants staff/admin privileges through the staff-access page. A role request never grants access by itself.
+The app enforces `@somaiya.edu` addresses and passwords with at least eight characters, an uppercase letter, and a special character. Public registration is for students only. Staff accounts are created by an administrator as confirmed Supabase Auth users, then granted staff access and a counter through the staff-access page; staff do not use student registration or OTP signup.
 
 ## Run locally
 

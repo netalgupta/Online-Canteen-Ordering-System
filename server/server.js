@@ -229,13 +229,6 @@ app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
   const password = String(req.body?.password || '');
   const passwordError = getPasswordPolicyError(password);
   if (passwordError) throw new HttpError(400, passwordError);
-  const requestedRole = String(req.body?.requestedRole || 'student');
-  if (!['student', 'staff', 'admin'].includes(requestedRole)) {
-    throw new HttpError(400, 'Choose a valid account role.');
-  }
-  const requestedCounter = req.body?.requestedCounter
-    ? validateCounter(req.body.requestedCounter)
-    : null;
   const rollNumber = String(req.body?.rollNumber || '').trim().slice(0, 40);
   const { data, error } = await publicAuthClient().auth.signUp({
     email,
@@ -245,8 +238,8 @@ app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
       data: {
         full_name: name,
         roll_number: rollNumber,
-        requested_role: requestedRole,
-        requested_counter: requestedCounter
+        requested_role: 'student',
+        requested_counter: null
       }
     }
   });
