@@ -111,6 +111,11 @@ test('browser pages use the same-origin API adapter without a hard-coded Supabas
 test('clean login and registration URLs redirect to their static pages', () => {
   assert.match(server, /app\.get\('\/login', \(_req, res\) => res\.redirect\(302, '\/login\.html'\)\)/);
   assert.match(server, /app\.get\('\/register', \(_req, res\) => res\.redirect\(302, '\/register\.html'\)\)/);
+  for (const role of ['student', 'staff', 'admin']) {
+    assert.ok(server.includes(
+      `app.get('/${role}/dashboard', (_req, res) => res.redirect(302, '/${role}/dashboard.html'))`
+    ));
+  }
 });
 
 test('inline JavaScript in auth and staff-access pages parses', () => {

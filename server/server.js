@@ -567,6 +567,9 @@ app.patch('/api/orders/:orderId/items/:itemId/status', roles('staff', 'admin'), 
 
 app.get('/login', (_req, res) => res.redirect(302, '/login.html'));
 app.get('/register', (_req, res) => res.redirect(302, '/register.html'));
+app.get('/student/dashboard', (_req, res) => res.redirect(302, '/student/dashboard.html'));
+app.get('/staff/dashboard', (_req, res) => res.redirect(302, '/staff/dashboard.html'));
+app.get('/admin/dashboard', (_req, res) => res.redirect(302, '/admin/dashboard.html'));
 app.use(express.static(path.resolve(__dirname, '..')));
 
 app.listen(port, () => {
