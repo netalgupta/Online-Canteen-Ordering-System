@@ -75,6 +75,18 @@ function asyncRoute(handler, fallback = 'The request could not be completed.') {
     Promise.resolve(handler(req, res, next)).catch(error => sendError(res, error, fallback));
 }
 
+function profileLookupFailure(error) {
+  if (error) {
+    console.error('QueueLess profile lookup failed.', {
+      code: error.code || 'unknown',
+      message: error.message || 'No database error message.'
+    });
+    const code = error.code ? ` (${error.code})` : '';
+    return new HttpError(503, `Could not read your QueueLess profile${code}.`);
+  }
+  return new HttpError(403, 'No QueueLess profile was found for your account.');
+}
+
 function userClient(accessToken) {
   return createClient(supabaseUrl, supabaseKey, {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
@@ -103,7 +115,7 @@ async function authenticate(req, { optional = false } = {}) {
     .select('user_id,full_name,phone,roll_number,role,counter_id')
     .eq('user_id', data.user.id)
     .single();
-  if (profileError || !profile) throw new HttpError(403, 'Your QueueLess profile is unavailable.');
+  if (profileError || !profile) throw profileLookupFailure(profileError);
 
   req.auth = data.user;
   req.profile = profile;
@@ -282,7 +294,7 @@ app.post('/api/auth/login', authLimiter, asyncRoute(async (req, res) => {
     .select('user_id,full_name,phone,roll_number,role,counter_id')
     .eq('user_id', data.user.id)
     .single();
-  if (profileError || !profile) throw new HttpError(403, 'Your QueueLess profile is unavailable.');
+  if (profileError || !profile) throw profileLookupFailure(profileError);
   res.json({
     token: data.session.access_token,
     refreshToken: data.session.refresh_token,
@@ -301,7 +313,7 @@ app.post('/api/auth/refresh', authLimiter, asyncRoute(async (req, res) => {
     .select('user_id,full_name,phone,roll_number,role,counter_id')
     .eq('user_id', data.user.id)
     .single();
-  if (profileError || !profile) throw new HttpError(403, 'Your QueueLess profile is unavailable.');
+  if (profileError || !profile) throw profileLookupFailure(profileError);
   res.json({
     token: data.session.access_token,
     refreshToken: data.session.refresh_token,

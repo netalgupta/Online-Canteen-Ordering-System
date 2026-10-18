@@ -36,6 +36,9 @@ test('authenticated API requests verify the Supabase user and query their RLS-sc
   assert.match(server, /Authorization: `Bearer /);
   assert.match(server, /\.from\('ql_profiles'\)/);
   assert.match(server, /if \(!allowed\.includes\(req\.profile\.role\)\)/);
+  assert.match(server, /function profileLookupFailure\(error\)/);
+  assert.match(server, /Could not read your QueueLess profile/);
+  assert.match(server, /No QueueLess profile was found/);
 });
 
 test('signup enforces Somaiya/password rules and stores role selections as requests only', async () => {
