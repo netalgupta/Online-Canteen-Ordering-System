@@ -24,6 +24,12 @@
   .role-option input:checked + label{border-color:var(--crimson);background:var(--crimson-tint);color:var(--crimson-dark);box-shadow:0 0 0 2px rgba(168,18,28,.08);}
   .demo-note{padding:10px 12px;margin:0 0 16px;border-radius:10px;background:var(--near-white);border:1px solid var(--line);color:var(--ink-soft);font-size:11.5px;line-height:1.45;}
   .counter-field{display:none}.counter-field.show{display:block}.counter-grid{display:grid;grid-template-columns:1fr;gap:7px}.counter-option{padding:10px 11px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--white)}.counter-option:has(input:checked){border-color:var(--crimson);background:var(--crimson-tint)}
+  #otp-step{display:none;}
+  #otp-step.active{display:block;}
+  .otp-digits{display:flex;gap:8px;justify-content:center;margin:16px 0;}
+  .otp-digits input{width:44px;height:52px;font-size:22px;font-weight:700;text-align:center;border:1.5px solid var(--line);border-radius:10px;outline:none;font-family:monospace;}
+  .otp-digits input:focus{border-color:var(--crimson);box-shadow:0 0 0 3px rgba(168,18,28,.1);}
+  .text-link{background:none;border:0;padding:0;cursor:pointer;color:var(--crimson-dark);font-size:12.5px;font-weight:600;text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -31,46 +37,59 @@
   <div class="auth-card">
     <a href="index.html" class="auth-brand"><span class="brand-mark">Q</span>QueueLess</a>
     <div class="card">
-      <h1>Create your account</h1>
-      <p class="sub">Choose a role and enter the matching QueueLess workspace.</p>
-      <form id="register-form">
-        <div class="field">
-          <label>Full name</label>
-          <input type="text" id="name" placeholder="Arya Sharma" required>
-        </div>
-        <div class="field">
-          <label>College email</label>
-          <input type="email" id="email" placeholder="arya@somaiya.edu" required>
-        </div>
-        <div class="field">
-          <label>Roll number</label>
-          <input type="text" id="roll" placeholder="e.g. 21CSB045">
-        </div>
-        <div class="field">
-          <label>Password</label>
-          <input type="password" id="password" placeholder="••••••••" required>
-        </div>
-        <div class="field" style="margin-bottom:14px;">
-          <label>Account type</label>
-          <div class="role-grid">
-            <div class="role-option"><input type="radio" name="role" id="role-student" value="student" checked><label for="role-student"><span>Student</span><small>Order & track</small></label></div>
-            <div class="role-option"><input type="radio" name="role" id="role-staff" value="staff"><label for="role-staff"><span>Staff</span><small>Kitchen tools</small></label></div>
-            <div class="role-option"><input type="radio" name="role" id="role-admin" value="admin"><label for="role-admin"><span>Admin</span><small>Management</small></label></div>
+
+      <!-- Step 1: Registration form -->
+      <div id="register-step">
+        <h1>Create your account</h1>
+        <p class="sub">Choose a role and enter the matching QueueLess workspace.</p>
+        <form id="register-form">
+          <div class="field"><label>Full name</label><input type="text" id="name" placeholder="Arya Sharma" required></div>
+          <div class="field"><label>College email</label><input type="email" id="email" placeholder="arya@somaiya.edu" required autocomplete="email"></div>
+          <div class="field"><label>Roll number</label><input type="text" id="roll" placeholder="e.g. 21CSB045"></div>
+          <div class="field"><label>Password</label><input type="password" id="password" placeholder="••••••••" required autocomplete="new-password"></div>
+          <div class="field" style="margin-bottom:14px;">
+            <label>Account type</label>
+            <div class="role-grid">
+              <div class="role-option"><input type="radio" name="role" id="role-student" value="student" checked><label for="role-student"><span>Student</span><small>Order &amp; track</small></label></div>
+              <div class="role-option"><input type="radio" name="role" id="role-staff" value="staff"><label for="role-staff"><span>Staff</span><small>Kitchen tools</small></label></div>
+              <div class="role-option"><input type="radio" name="role" id="role-admin" value="admin"><label for="role-admin"><span>Admin</span><small>Management</small></label></div>
+            </div>
           </div>
-        </div>
-        <div class="counter-field" id="counter-field">
-          <label>Staff pickup counter</label>
-          <div class="counter-grid">
-            <label class="counter-option"><input type="radio" name="counter" value="C1" checked> <strong>Counter 1</strong> · Packaged Snacks & Ice Cream</label>
-            <label class="counter-option"><input type="radio" name="counter" value="C2"> <strong>Counter 2</strong> · Frankie & Juice</label>
-            <label class="counter-option"><input type="radio" name="counter" value="C3"> <strong>Counter 3</strong> · Chaat · Sev Puri &amp; Pani Puri</label>
-            <label class="counter-option"><input type="radio" name="counter" value="C4"> <strong>Counter 4</strong> · Main Canteen · Meals &amp; Everything Else</label>
+          <div class="counter-field" id="counter-field">
+            <label>Staff pickup counter</label>
+            <div class="counter-grid">
+              <label class="counter-option"><input type="radio" name="counter" value="C1" checked> <strong>Counter 1</strong> · Packaged Snacks &amp; Ice Cream</label>
+              <label class="counter-option"><input type="radio" name="counter" value="C2"> <strong>Counter 2</strong> · Frankie &amp; Juice</label>
+              <label class="counter-option"><input type="radio" name="counter" value="C3"> <strong>Counter 3</strong> · Chaat · Sev Puri &amp; Pani Puri</label>
+              <label class="counter-option"><input type="radio" name="counter" value="C4"> <strong>Counter 4</strong> · Main Canteen · Meals &amp; Everything Else</label>
+            </div>
           </div>
+          <div class="demo-note">Student accounts can sign up here. Staff and Admin access must be granted by an administrator; selecting those roles here will not grant privileges.</div>
+          <p id="auth-message" role="status" style="display:none;margin:0 0 12px;font-size:13px;color:var(--crimson-dark)"></p>
+          <button type="submit" class="btn btn-amber btn-block" id="register-btn">Create Account <i data-lucide="arrow-right"></i></button>
+        </form>
+      </div>
+
+      <!-- Step 2: OTP verification -->
+      <div id="otp-step">
+        <h1>Verify your email</h1>
+        <p class="sub">Enter the 6-digit code we sent to your email to activate your account.</p>
+        <p style="text-align:center;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Code sent to <strong id="otp-email-label"></strong></p>
+        <div class="otp-digits">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="reg-otp-box" data-idx="0" autocomplete="one-time-code">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="reg-otp-box" data-idx="1">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="reg-otp-box" data-idx="2">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="reg-otp-box" data-idx="3">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="reg-otp-box" data-idx="4">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="reg-otp-box" data-idx="5">
         </div>
-        <div class="demo-note">Student accounts can sign up here. Staff and Admin access must be granted by an administrator; selecting those roles here will not grant privileges.</div>
-        <p id="auth-message" role="status" style="display:none;margin:0 0 12px;font-size:13px;color:var(--crimson-dark)"></p>
-        <button type="submit" class="btn btn-amber btn-block" id="register-btn">Create Account <i data-lucide="arrow-right"></i></button>
-      </form>
+        <button id="otp-verify-btn" class="btn btn-amber btn-block" style="margin-bottom:12px">Verify &amp; Continue <i data-lucide="shield-check"></i></button>
+        <p id="otp-message" role="status" style="display:none;margin-bottom:12px;font-size:13px;color:var(--crimson-dark)"></p>
+        <div style="text-align:center;font-size:12.5px;">
+          Didn't get it? <button type="button" id="resend-otp-btn" class="text-link">Resend code</button>
+        </div>
+      </div>
+
     </div>
     <p class="auth-foot">Already have an account? <a href="login.html">Log in</a></p>
   </div>
@@ -80,8 +99,61 @@
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 <script>
-  document.querySelectorAll('input[name="role"]').forEach(r=>r.addEventListener('change',()=>{document.getElementById('register-btn').firstChild.textContent=r.checked?(r.value.charAt(0).toUpperCase()+r.value.slice(1)+' Account '):document.getElementById('register-btn').firstChild.textContent;document.getElementById('counter-field').classList.toggle('show',r.checked&&r.value==='staff');}));
-  document.getElementById('register-form').addEventListener('submit',async(e)=>{e.preventDefault();const message=document.getElementById('auth-message');const show=(t,ok=false)=>{message.textContent=t;message.style.display='block';message.style.color=ok?'#237547':'var(--crimson-dark)'};const name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim(),password=document.getElementById('password').value,rollNumber=document.getElementById('roll').value.trim();const role=document.querySelector('input[name="role"]:checked').value;if(role!=='student'){show('Staff and Admin accounts cannot self-assign privileged roles. The configured admin email receives Admin access automatically.');return;}if(password.length<8){show('Use a password with at least 8 characters.');return;}const btn=document.getElementById('register-btn');btn.disabled=true;btn.textContent='Creating account…';try{const result=await window.qlMongoAuth.signUp({name,email,password,rollNumber});let msg=result.message;if(result.devVerificationLink){msg+=' Open this local demo verification link: '+result.devVerificationLink;}show(msg,true);btn.disabled=false;btn.textContent='Create Account';}catch(err){show(err.message||'Could not create account.');btn.disabled=false;btn.textContent='Create Account';}});
+  document.querySelectorAll('input[name="role"]').forEach(r=>r.addEventListener('change',()=>{
+    document.getElementById('counter-field').classList.toggle('show',r.checked&&r.value==='staff');
+  }));
+
+  let _regEmail='', _regPassword='';
+  const regStep=document.getElementById('register-step'), otpStep=document.getElementById('otp-step');
+  const otpBoxes=Array.from(document.querySelectorAll('.reg-otp-box'));
+
+  function showOtpStep(email){_regEmail=email;document.getElementById('otp-email-label').textContent=email;regStep.style.display='none';otpStep.classList.add('active');otpBoxes[0].focus();if(window.lucide)lucide.createIcons();}
+  function showMsg(id,msg,ok=false){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';el.style.color=ok?'#237547':'var(--crimson-dark)';}
+  function getOtp(){return otpBoxes.map(b=>b.value).join('');}
+
+  otpBoxes.forEach((box,i)=>{
+    box.addEventListener('input',e=>{const v=e.target.value.replace(/\D/g,'');e.target.value=v.slice(-1);if(v&&i<otpBoxes.length-1)otpBoxes[i+1].focus();});
+    box.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!box.value&&i>0)otpBoxes[i-1].focus();if(e.key==='Enter')document.getElementById('otp-verify-btn').click();});
+    box.addEventListener('paste',e=>{e.preventDefault();const d=(e.clipboardData.getData('text')||'').replace(/\D/g,'').slice(0,6);d.split('').forEach((c,j)=>{if(otpBoxes[j])otpBoxes[j].value=c;});otpBoxes[Math.min(d.length,5)].focus();});
+  });
+
+  document.getElementById('register-form').addEventListener('submit',async(e)=>{
+    e.preventDefault();
+    const name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim(),password=document.getElementById('password').value,rollNumber=document.getElementById('roll').value.trim();
+    const role=document.querySelector('input[name="role"]:checked').value;
+    if(role!=='student'){showMsg('auth-message','Staff and Admin accounts cannot self-assign privileged roles. The configured admin email receives Admin access automatically.');return;}
+    if(password.length<8){showMsg('auth-message','Use a password with at least 8 characters.');return;}
+    _regPassword=password;
+    const btn=document.getElementById('register-btn');btn.disabled=true;btn.textContent='Creating account…';
+    try{
+      const result=await window.qlMongoAuth.signUp({name,email,password,rollNumber});
+      showOtpStep(email);
+      if(result.devOtp){const el=document.getElementById('otp-message');el.textContent=`Dev mode — OTP: ${result.devOtp}`;el.style.display='block';el.style.color='#237547';}
+    } catch(err){showMsg('auth-message',err.message||'Could not create account.');btn.disabled=false;btn.textContent='Create Account';}
+  });
+
+  document.getElementById('otp-verify-btn').addEventListener('click',async()=>{
+    const otp=getOtp();if(otp.length<6){showMsg('otp-message','Enter all 6 digits.');return;}
+    const btn=document.getElementById('otp-verify-btn');btn.disabled=true;btn.textContent='Verifying…';document.getElementById('otp-message').style.display='none';
+    try{
+      await window.qlMongoAuth.verifyOtp(_regEmail,otp);
+      showMsg('otp-message','Verified! Logging you in…',true);
+      try{const user=await window.qlMongoAuth.signIn(_regEmail,_regPassword);window.location.href=qlRoleHome(user.role);}
+      catch{window.location.href='login.html?verified=1';}
+    } catch(err){
+      showMsg('otp-message',err.message||'Incorrect code. Try again.');
+      otpBoxes.forEach(b=>b.value='');otpBoxes[0].focus();
+      btn.disabled=false;btn.innerHTML='Verify &amp; Continue <i data-lucide="shield-check"></i>';
+      if(window.lucide)lucide.createIcons();
+    }
+  });
+
+  document.getElementById('resend-otp-btn').addEventListener('click',async()=>{
+    const btn=document.getElementById('resend-otp-btn');btn.disabled=true;btn.textContent='Sending…';
+    try{const res=await window.qlMongoAuth.resendOtp(_regEmail);otpBoxes.forEach(b=>b.value='');otpBoxes[0].focus();showMsg('otp-message',res.devOtp?`Dev mode — new OTP: ${res.devOtp}`:'New code sent!',true);}
+    catch(err){showMsg('otp-message',err.message||'Could not resend.');}
+    finally{btn.disabled=false;btn.textContent='Resend code';}
+  });
 </script>
 </body>
 </html>

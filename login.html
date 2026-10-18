@@ -18,11 +18,15 @@
   .auth-foot a{color:var(--ink); font-weight:600;}
   .access-note{padding:12px 13px;margin:0 0 18px;border-radius:10px;background:var(--crimson-tint);border:1px solid #f4c9cc;color:var(--crimson-dark);font-size:11.5px;line-height:1.45;}
   .access-note strong{display:block;font-size:12.5px;margin-bottom:2px;}
-  .demo-access{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);}
-  .demo-access p{font-size:11.5px;color:var(--ink-soft);margin-bottom:9px;}
-  .demo-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-  .demo-buttons button{border:1px solid var(--line);background:var(--white);border-radius:10px;padding:9px 5px;font-size:11px;font-weight:700;cursor:pointer;}
-  .demo-buttons button:hover{border-color:var(--crimson);background:var(--crimson-tint);color:var(--crimson-dark);}
+  /* OTP input panel */
+  #otp-panel{display:none;}
+  #otp-panel.active{display:block;}
+  .otp-digits{display:flex;gap:8px;justify-content:center;margin:16px 0;}
+  .otp-digits input{width:44px;height:52px;font-size:22px;font-weight:700;text-align:center;border:1.5px solid var(--line);border-radius:10px;outline:none;font-family:monospace;}
+  .otp-digits input:focus{border-color:var(--crimson);box-shadow:0 0 0 3px rgba(168,18,28,.1);}
+  .otp-meta{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;}
+  .otp-meta strong{color:var(--ink);}
+  .text-link{background:none;border:0;padding:0;cursor:pointer;color:var(--crimson-dark);font-size:12.5px;font-weight:600;text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -30,35 +34,49 @@
   <div class="auth-card">
     <a href="index.html" class="auth-brand"><span class="brand-mark">Q</span>QueueLess</a>
     <div class="card">
-      <h1>Welcome back</h1>
-      <p class="sub">Log in to pre-order, track and collect.</p>
 
-      <div class="access-note"><strong>Secure sign in</strong>Sign in with your registered email. Your authorized role determines which workspace opens.</div>
+      <!-- ── Step 1: Email + Password ───────────────────────────────── -->
+      <div id="login-panel">
+        <h1>Welcome back</h1>
+        <p class="sub">Log in to pre-order, track and collect.</p>
+        <div class="access-note"><strong>Secure sign in</strong>Sign in with your registered email. Your authorised role determines which workspace opens.</div>
+        <form id="login-form">
+          <div class="field">
+            <label>College email</label>
+            <input type="email" id="email" placeholder="arya@somaiya.edu" required autocomplete="email">
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="btn btn-amber btn-block">Log In <i data-lucide="arrow-right"></i></button>
+        </form>
+        <p id="auth-message" role="status" style="display:none;margin-top:12px;font-size:13px;color:var(--crimson-dark)"></p>
+        <div class="field" style="margin-top:12px"><button type="button" id="forgot-password" class="text-link" style="font-size:13px">Forgot password?</button></div>
+      </div>
 
-      <form id="login-form">
-        <div class="field">
-          <label>College email</label>
-          <input type="email" id="email" placeholder="arya@somaiya.edu" required>
+      <!-- ── Step 2: OTP Verification (shown when account unverified) ── -->
+      <div id="otp-panel">
+        <h1>Verify your email</h1>
+        <p class="sub" id="otp-subtitle">Enter the 6-digit code sent to your email.</p>
+        <p class="otp-meta">Code sent to <strong id="otp-email-label"></strong></p>
+        <div class="otp-digits">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" data-idx="0" autocomplete="one-time-code">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" data-idx="1">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" data-idx="2">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" data-idx="3">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" data-idx="4">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" data-idx="5">
         </div>
-        <div class="field">
-          <label>Password</label>
-          <input type="password" id="password" placeholder="••••••••" required>
-        </div>
-        <button type="submit" class="btn btn-amber btn-block">Log In <i data-lucide="arrow-right"></i></button>
-      </form>
-      <p id="auth-message" role="status" style="display:none;margin-top:12px;font-size:13px;color:var(--crimson-dark)"></p>
-      <div class="field" style="margin-top:12px"><button type="button" id="forgot-password" class="text-link" style="border:0;background:none;padding:0;color:var(--ink-soft);cursor:pointer">Forgot password?</button></div>
-      <div class="demo-access" style="display:none">
-        <p>Quick access</p>
-        <div class="demo-buttons">
-          <button type="button" data-role="student">Student</button>
-          <button type="button" data-role="admin">Admin</button>
-          <button type="button" data-role="staff" data-counter="C1">Staff · Counter 1</button>
-          <button type="button" data-role="staff" data-counter="C2">Staff · Counter 2</button>
-          <button type="button" data-role="staff" data-counter="C3">Staff · Counter 3</button>
-          <button type="button" data-role="staff" data-counter="C4">Staff · Counter 4</button>
+        <button id="otp-submit-btn" class="btn btn-amber btn-block" style="margin-bottom:12px">Verify Code <i data-lucide="shield-check"></i></button>
+        <p id="otp-message" role="status" style="display:none;margin-bottom:12px;font-size:13px;color:var(--crimson-dark)"></p>
+        <div style="text-align:center;font-size:12.5px;">
+          Didn't receive it? <button type="button" id="resend-otp-btn" class="text-link">Resend code</button>
+          &nbsp;·&nbsp;
+          <button type="button" id="back-to-login-btn" class="text-link" style="color:var(--ink-soft)">Back to login</button>
         </div>
       </div>
+
     </div>
     <p class="auth-foot">New to QueueLess? <a href="register.html">Create an account</a></p>
   </div>
@@ -68,11 +86,154 @@
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 <script>
-  const loginForm=document.getElementById('login-form'); const authMessage=document.getElementById('auth-message');
-  function showAuthMessage(message,isError=true){authMessage.textContent=message;authMessage.style.display='block';authMessage.style.color=isError?'var(--crimson-dark)':'#237547';}
-  const qs=new URLSearchParams(location.search); if(qs.get('verified')==='1')showAuthMessage('Email verified. You can now log in.',false);
-  loginForm.addEventListener('submit',async(e)=>{e.preventDefault();const btn=loginForm.querySelector('button[type="submit"]');btn.disabled=true;btn.textContent='Signing in…';try{const user=await window.qlMongoAuth.signIn(document.getElementById('email').value.trim(),document.getElementById('password').value);window.location.href=qlRoleHome(user.role);}catch(err){showAuthMessage(err.message||'Could not sign in.');btn.disabled=false;btn.innerHTML='Log In <i data-lucide="arrow-right"></i>';if(window.lucide)lucide.createIcons();}});
-  document.getElementById('forgot-password').addEventListener('click',()=>showAuthMessage('For this project demo, contact the administrator to reset your password.'));
+/* ── State ── */
+let _pendingEmail = '';
+
+/* ── Helpers ── */
+const loginPanel   = document.getElementById('login-panel');
+const otpPanel     = document.getElementById('otp-panel');
+const authMessage  = document.getElementById('auth-message');
+const otpMessage   = document.getElementById('otp-message');
+const otpBoxes     = Array.from(document.querySelectorAll('.otp-box'));
+
+function showAuthMsg(msg, ok=false){
+  authMessage.textContent=msg; authMessage.style.display='block';
+  authMessage.style.color=ok?'#237547':'var(--crimson-dark)';
+}
+function showOtpMsg(msg, ok=false){
+  otpMessage.textContent=msg; otpMessage.style.display='block';
+  otpMessage.style.color=ok?'#237547':'var(--crimson-dark)';
+}
+function clearOtpMsg(){ otpMessage.style.display='none'; otpMessage.textContent=''; }
+function showOtpPanel(email, subtitle){
+  _pendingEmail=email;
+  document.getElementById('otp-email-label').textContent=email;
+  if(subtitle) document.getElementById('otp-subtitle').textContent=subtitle;
+  loginPanel.style.display='none';
+  otpPanel.classList.add('active');
+  otpBoxes[0].focus();
+  if(window.lucide) lucide.createIcons();
+}
+function showLoginPanel(){
+  otpPanel.classList.remove('active');
+  loginPanel.style.display='block';
+  clearOtpMsg();
+  otpBoxes.forEach(b=>b.value='');
+}
+function getOtpValue(){ return otpBoxes.map(b=>b.value).join(''); }
+
+/* ── OTP box UX: auto-advance, backspace, paste ── */
+otpBoxes.forEach((box, i) => {
+  box.addEventListener('input', e => {
+    const v = e.target.value.replace(/\D/g,'');
+    e.target.value = v.slice(-1);
+    if(v && i < otpBoxes.length-1) otpBoxes[i+1].focus();
+  });
+  box.addEventListener('keydown', e => {
+    if(e.key==='Backspace' && !box.value && i>0) otpBoxes[i-1].focus();
+    if(e.key==='Enter') document.getElementById('otp-submit-btn').click();
+  });
+  box.addEventListener('paste', e => {
+    e.preventDefault();
+    const digits = (e.clipboardData.getData('text')||'').replace(/\D/g,'').slice(0,6);
+    digits.split('').forEach((d,j)=>{ if(otpBoxes[j]) otpBoxes[j].value=d; });
+    const last = Math.min(digits.length, otpBoxes.length-1);
+    otpBoxes[last].focus();
+  });
+});
+
+/* ── Login form ── */
+const loginForm = document.getElementById('login-form');
+const qs = new URLSearchParams(location.search);
+if(qs.get('verified')==='1') showAuthMsg('Email verified ✓  You can now log in.', true);
+
+loginForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = loginForm.querySelector('button[type="submit"]');
+  btn.disabled=true; btn.textContent='Signing in…';
+  authMessage.style.display='none';
+  try{
+    const user = await window.qlMongoAuth.signIn(
+      document.getElementById('email').value.trim(),
+      document.getElementById('password').value
+    );
+    window.location.href = qlRoleHome(user.role);
+  } catch(err){
+    const d = err.data || {};
+    if(d.verificationRequired){
+      // Server already sent a fresh OTP — show OTP panel
+      showOtpPanel(d.email || document.getElementById('email').value.trim(),
+        'A verification code was sent to your email.');
+      if(d.devOtp){
+        showOtpMsg(`Dev mode — OTP: ${d.devOtp}`, true);
+      }
+    } else {
+      showAuthMsg(err.message || 'Could not sign in.');
+    }
+    btn.disabled=false;
+    btn.innerHTML='Log In <i data-lucide="arrow-right"></i>';
+    if(window.lucide) lucide.createIcons();
+  }
+});
+
+/* ── OTP submit ── */
+document.getElementById('otp-submit-btn').addEventListener('click', async () => {
+  const otp = getOtpValue();
+  if(otp.length < 6){ showOtpMsg('Enter all 6 digits.'); return; }
+  const btn = document.getElementById('otp-submit-btn');
+  btn.disabled=true; btn.textContent='Verifying…';
+  clearOtpMsg();
+  try{
+    await window.qlMongoAuth.verifyOtp(_pendingEmail, otp);
+    showOtpMsg('Email verified! Logging you in…', true);
+    // Now sign in
+    setTimeout(async ()=>{
+      try{
+        const user = await window.qlMongoAuth.signIn(
+          _pendingEmail,
+          document.getElementById('password').value
+        );
+        window.location.href = qlRoleHome(user.role);
+      } catch(e2){
+        showLoginPanel();
+        showAuthMsg('Verified! Please log in with your password.');
+      }
+    }, 800);
+  } catch(err){
+    showOtpMsg(err.message || 'Incorrect code. Try again.');
+    otpBoxes.forEach(b=>b.value='');
+    otpBoxes[0].focus();
+    btn.disabled=false;
+    btn.innerHTML='Verify Code <i data-lucide="shield-check"></i>';
+    if(window.lucide) lucide.createIcons();
+  }
+});
+
+/* ── Resend OTP ── */
+document.getElementById('resend-otp-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('resend-otp-btn');
+  btn.disabled=true; btn.textContent='Sending…';
+  clearOtpMsg();
+  try{
+    const res = await window.qlMongoAuth.resendOtp(_pendingEmail);
+    otpBoxes.forEach(b=>b.value='');
+    otpBoxes[0].focus();
+    let msg = 'New code sent to your email.';
+    if(res.devOtp) msg = `Dev mode — new OTP: ${res.devOtp}`;
+    showOtpMsg(msg, true);
+  } catch(err){
+    showOtpMsg(err.message || 'Could not resend code.');
+  } finally{
+    btn.disabled=false; btn.textContent='Resend code';
+  }
+});
+
+/* ── Back to login ── */
+document.getElementById('back-to-login-btn').addEventListener('click', showLoginPanel);
+
+/* ── Forgot password ── */
+document.getElementById('forgot-password').addEventListener('click', () =>
+  showAuthMsg('For this project demo, contact the administrator to reset your password.'));
 </script>
 </body>
 </html>
