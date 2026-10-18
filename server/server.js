@@ -1,227 +1,560 @@
 import dotenv from 'dotenv';
 import express from 'express';
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import crypto from 'node:crypto';
+import { createClient } from '@supabase/supabase-js';
 import { rateLimit } from 'express-rate-limit';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import nodemailer from 'nodemailer';
-import menuSeed from './seed-menu.json' with { type: 'json' };
 import { getPasswordPolicyError, isSomaiyaEmail } from './src/utils/authValidation.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({path:path.join(__dirname,'.env')});
-const app = express(); app.use(express.json({limit:'1mb'}));
-const PORT = Number(process.env.PORT || 3000);
-const authLimiter = rateLimit({windowMs:15*60*1000,limit:20,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many authentication attempts. Try again later.'}});
-const otpLimiter = rateLimit({windowMs:15*60*1000,limit:8,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many verification attempts. Try again later.'}});
-const resendOtpLimiter = rateLimit({windowMs:60*60*1000,limit:3,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many verification codes requested. Try again later.'}});
-const ADMIN_EMAILS = new Set((process.env.ADMIN_EMAILS || '').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean));
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET.length < 32) { console.error('Set JWT_SECRET to a random secret of at least 32 characters.'); process.exit(1); }
+dotenv.config({ path: path.join(__dirname, '.env') });
 
-// ─── Schemas ───────────────────────────────────────────────────────────────────
-const userSchema = new mongoose.Schema({
-  name:{type:String,required:true,trim:true,maxlength:100},
-  email:{type:String,required:true,unique:true,lowercase:true,trim:true,match:/^[^\s@]+@somaiya\.edu$/i},
-  passwordHash:{type:String,required:true},
-  role:{type:String,enum:['student','staff','admin'],default:'student'},
-  counterId:{type:String,enum:['C1','C2','C3','C4',null],default:null},
-  verified:{type:Boolean,default:false},
-  // OTP-based email verification (replaces link-based flow)
-  otpHash:String,
-  otpExpires:Date,
-  otpAttempts:{type:Number,default:0},
-  createdAt:{type:Date,default:Date.now}
-},{versionKey:false});
-
-const menuSchema = new mongoose.Schema({itemId:{type:String,unique:true,index:true},name:String,category:String,price:{type:Number,min:0},prepTimeMinutes:{type:Number,default:5},veg:{type:Boolean,default:true},available:{type:Boolean,default:true},popular:Boolean,description:String,image:String},{versionKey:false});
-const orderSchema = new mongoose.Schema({orderNumber:{type:Number,unique:true},userId:{type:mongoose.Schema.Types.ObjectId,ref:'User',index:true},customerName:String,customerEmail:String,items:[{menuItemId:String,name:String,price:Number,quantity:{type:Number,min:1},instructions:String,counterId:String,status:{type:String,enum:['received','accepted','preparing','ready','collected'],default:'received'},prepTimeMinutes:Number}],pickupSlot:{type:Date,index:true},paymentMethod:{type:String,enum:['pay-at-counter','online','demo'],default:'pay-at-counter'},paymentStatus:{type:String,enum:['not-required','pending','paid','failed'],default:'not-required'},instructions:String,total:Number,status:{type:String,default:'received'},createdAt:{type:Date,default:Date.now}},{versionKey:false});
-const User=mongoose.model('User',userSchema), Menu=mongoose.model('MenuItem',menuSchema), Order=mongoose.model('Order',orderSchema);
-
-// ─── Email transport ───────────────────────────────────────────────────────────
-const emailTransport = process.env.SMTP_HOST ? nodemailer.createTransport({
-  host:process.env.SMTP_HOST,
-  port:Number(process.env.SMTP_PORT||587),
-  secure:process.env.SMTP_SECURE==='true',
-  auth:process.env.SMTP_USER?{user:process.env.SMTP_USER,pass:process.env.SMTP_PASS}:undefined
-}) : null;
-if(process.env.NODE_ENV==='production'&&!emailTransport){console.error('Configure SMTP before starting QueueLess in production.');process.exit(1);}
-
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-function safeUser(u){return {id:String(u._id),name:u.name,email:u.email,role:u.role,counterId:u.counterId,verified:u.verified};}
-function issueToken(u){return jwt.sign({sub:String(u._id),email:u.email,name:u.name,role:u.role},JWT_SECRET,{expiresIn:'7d',issuer:'queueless-demo'});}
-function auth(req,res,next){const raw=(req.headers.authorization||'').replace(/^Bearer\s+/i,'');try{if(!raw)throw 0;const p=jwt.verify(raw,JWT_SECRET,{issuer:'queueless-demo'});req.auth=p;next();}catch{return res.status(401).json({error:'Please sign in again.'});}}
-function roles(...allowed){return async(req,res,next)=>{const u=await User.findById(req.auth.sub).catch(()=>null);if(!u)return res.status(401).json({error:'Account not found.'});if(!u.verified)return res.status(403).json({error:'Verify your email before continuing.'});if(!allowed.includes(u.role))return res.status(403).json({error:'You do not have permission for this action.'});req.user=u;next();};}
-function counterFor(category=''){if(['Packaged Snacks','Snacks','Desserts','Ice Cream','Packaged Snacks & Ice Cream'].includes(category))return 'C1';if(['Frankie Counter','Juices','Juice','Frankie'].includes(category))return 'C2';if(['Chaat Items','Chaat'].includes(category))return 'C3';return 'C4';}
-
-/** Generate a 6-digit OTP, store its hash, return plain OTP for emailing. */
-function generateOtp(){
-  const otp = String(Math.floor(100000 + crypto.randomInt(900000))).padStart(6,'0');
-  const hash = crypto.createHash('sha256').update(otp).digest('hex');
-  return {otp, hash};
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY in server/.env.');
+  process.exit(1);
 }
 
-/** Send OTP email (or print to console in dev). Returns {sent, devOtp?} */
-async function sendOtpEmail(user, otp){
-  const subject = 'Your QueueLess verification code';
-  const text = `Hi ${user.name},\n\nYour QueueLess verification code is:\n\n  ${otp}\n\nThis code expires in 15 minutes. Do not share it with anyone.\n\nIf you did not create this account, ignore this message.`;
-  const html = `<p>Hi <strong>${user.name}</strong>,</p>
-<p>Your QueueLess verification code is:</p>
-<h2 style="font-family:monospace;letter-spacing:8px;font-size:36px;color:#a8121c">${otp}</h2>
-<p>This code expires in <strong>15 minutes</strong>. Do not share it with anyone.</p>
-<p style="color:#888;font-size:12px">If you did not create this account, ignore this message.</p>`;
+const app = express();
+const port = Number(process.env.PORT || 3000);
+const authClient = createClient(supabaseUrl, supabaseKey, {
+  auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false }
+});
+function publicAuthClient() {
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false }
+  });
+}
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false,
+  message: { error: 'Too many authentication attempts. Try again later.' }
+});
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, limit: 8, standardHeaders: 'draft-8', legacyHeaders: false,
+  message: { error: 'Too many verification attempts. Try again later.' }
+});
+const resendOtpLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, limit: 3, standardHeaders: 'draft-8', legacyHeaders: false,
+  message: { error: 'Too many verification codes requested. Try again later.' }
+});
 
-  if(emailTransport){
-    await emailTransport.sendMail({from:process.env.MAIL_FROM||process.env.SMTP_USER,to:user.email,subject,text,html});
-    return {sent:true};
+app.use(express.json({ limit: '1mb' }));
+
+class HttpError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
   }
-  console.log(`[DEMO OTP] Code for ${user.email}: ${otp}`);
-  return {sent:false, devOtp: otp};
 }
 
-// ─── Health ────────────────────────────────────────────────────────────────────
-app.get('/api/health',(_req,res)=>res.json({ok:true,service:'QueueLess MongoDB demo'}));
+function sendError(res, error, fallback) {
+  if (error instanceof HttpError) return res.status(error.status).json({ error: error.message });
+  const message = String(error?.message || error || '');
+  const knownErrors = {
+    PICKUP_SLOT_FULL: [409, 'This pickup slot is full. Choose another slot.'],
+    INVALID_PICKUP_SLOT: [400, 'Choose a valid 7-minute pickup slot.'],
+    OUTSIDE_BUSINESS_HOURS: [400, 'Pickup slots must be between 6:00 AM and 7:00 PM.'],
+    EMPTY_ORDER: [400, 'Cart is empty.'],
+    TOO_MANY_LINES: [400, 'An order can contain at most 30 different items.'],
+    INVALID_QUANTITY: [400, 'Item quantities must be between 1 and 99.'],
+    MENU_ITEM_UNAVAILABLE: [409, 'One or more menu items are unavailable. Refresh the menu.'],
+    STAFF_COUNTER_REQUIRED: [400, 'Assign a counter to staff accounts.'],
+    INVALID_ROLE: [400, 'Choose a valid account role.'],
+    PROFILE_NOT_FOUND: [404, 'Account not found.']
+  };
+  const match = Object.entries(knownErrors).find(([key]) => message.includes(key));
+  if (match) return res.status(match[1][0]).json({ error: match[1][1] });
+  if (error?.code === '42501') return res.status(403).json({ error: 'You do not have permission for this action.' });
+  console.error(fallback, error);
+  return res.status(500).json({ error: fallback });
+}
 
-// ─── Auth: Register ────────────────────────────────────────────────────────────
-app.post('/api/auth/register',authLimiter,async(req,res)=>{
-  try{
-    const name=String(req.body.name||'').trim(),email=String(req.body.email||'').trim().toLowerCase(),password=String(req.body.password||'');
-    if(name.length<2||name.length>100)return res.status(400).json({error:'Enter your full name.'});
-    if(!isSomaiyaEmail(email))return res.status(400).json({error:'Use your college email ending in @somaiya.edu.'});
-    const passwordError=getPasswordPolicyError(password);
-    if(passwordError)return res.status(400).json({error:passwordError});
-    if(await User.exists({email}))return res.status(409).json({error:'An account already exists for this email.'});
-    const role=ADMIN_EMAILS.has(email)?'admin':'student';
-    const {otp,hash}=generateOtp();
-    const user=await User.create({name,email,passwordHash:await bcrypt.hash(password,12),role,verified:false,otpHash:hash,otpExpires:new Date(Date.now()+15*60*1000),otpAttempts:0});
-    const mail=await sendOtpEmail(user,otp);
-    res.status(201).json({
-      message: mail.sent
-        ? 'Account created! Check your email for the 6-digit verification code.'
-        : 'Account created! Email not configured — use the dev OTP below.',
-      email:user.email,
-      verificationRequired:true,
-      devOtp: mail.devOtp || undefined
-    });
-  }catch(e){console.error(e);res.status(500).json({error:'Could not create account. Check server configuration.'});}
-});
+function asyncRoute(handler, fallback = 'The request could not be completed.') {
+  return (req, res, next) =>
+    Promise.resolve(handler(req, res, next)).catch(error => sendError(res, error, fallback));
+}
 
-// ─── Auth: Verify OTP ──────────────────────────────────────────────────────────
-app.post('/api/auth/verify-otp',otpLimiter,async(req,res)=>{
-  try{
-    const email=String(req.body.email||'').trim().toLowerCase();
-    const otp=String(req.body.otp||'').trim().replace(/\s/g,'');
-    if(!isSomaiyaEmail(email)||!otp)return res.status(400).json({error:'Use your @somaiya.edu email and enter the verification code.'});
-    const u=await User.findOne({email,verified:false});
-    if(!u)return res.status(404).json({error:'Account not found or already verified.'});
-    if(u.otpAttempts>=5)return res.status(429).json({error:'Too many failed attempts. Request a new code.'});
-    if(!u.otpHash||!u.otpExpires||u.otpExpires<new Date())return res.status(400).json({error:'Verification code has expired. Request a new one.'});
-    const hash=crypto.createHash('sha256').update(otp).digest('hex');
-    const storedHash=Buffer.from(u.otpHash,'hex');
-    const submittedHash=Buffer.from(hash,'hex');
-    if(storedHash.length!==submittedHash.length||!crypto.timingSafeEqual(storedHash,submittedHash)){
-      u.otpAttempts=(u.otpAttempts||0)+1;
-      await u.save();
-      const left=5-u.otpAttempts;
-      return res.status(400).json({error:`Incorrect code. ${left} attempt${left===1?'':'s'} remaining.`});
+function userClient(accessToken) {
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } }
+  });
+}
+
+function readBearerToken(req) {
+  const match = /^Bearer\s+(.+)$/i.exec(req.get('authorization') || '');
+  return match?.[1] || null;
+}
+
+async function authenticate(req, { optional = false } = {}) {
+  const token = readBearerToken(req);
+  if (!token) {
+    if (optional) return null;
+    throw new HttpError(401, 'Please sign in again.');
+  }
+  const { data, error } = await authClient.auth.getUser(token);
+  if (error || !data.user) throw new HttpError(401, 'Please sign in again.');
+  if (!isSomaiyaEmail(data.user.email || '')) throw new HttpError(403, 'Use an account ending in @somaiya.edu.');
+
+  const db = userClient(token);
+  const { data: profile, error: profileError } = await db
+    .from('ql_profiles')
+    .select('user_id,full_name,phone,roll_number,role,counter_id')
+    .eq('user_id', data.user.id)
+    .single();
+  if (profileError || !profile) throw new HttpError(403, 'Your QueueLess profile is unavailable.');
+
+  req.auth = data.user;
+  req.profile = profile;
+  req.db = db;
+  return data.user;
+}
+
+const auth = asyncRoute(async (req, _res, next) => {
+  await authenticate(req);
+  next();
+}, 'Could not verify your session.');
+
+function roles(...allowed) {
+  return asyncRoute(async (req, res, next) => {
+    await authenticate(req);
+    if (!allowed.includes(req.profile.role)) {
+      throw new HttpError(403, 'You do not have permission for this action.');
     }
-    u.verified=true;
-    u.otpHash=undefined;
-    u.otpExpires=undefined;
-    u.otpAttempts=0;
-    await u.save();
-    res.json({ok:true,message:'Email verified! You can now log in.'});
-  }catch(e){console.error(e);res.status(500).json({error:'Could not verify code.'});}
-});
+    next();
+  }, 'Could not verify your access.');
+}
 
-// ─── Auth: Resend OTP ─────────────────────────────────────────────────────────
-app.post('/api/auth/resend-otp',resendOtpLimiter,async(req,res)=>{
-  try{
-    const email=String(req.body.email||'').trim().toLowerCase();
-    if(!isSomaiyaEmail(email))return res.status(400).json({error:'Use your college email ending in @somaiya.edu.'});
-    const u=await User.findOne({email,verified:false});
-    if(u){
-      const {otp,hash}=generateOtp();
-      u.otpHash=hash;
-      u.otpExpires=new Date(Date.now()+15*60*1000);
-      u.otpAttempts=0;
-      await u.save();
-      const mail=await sendOtpEmail(u,otp);
-      return res.json({message:'A new verification code has been sent to your email.',devOtp:mail.devOtp||undefined});
+function requireSomaiyaEmail(value) {
+  const email = String(value || '').trim().toLowerCase();
+  if (!isSomaiyaEmail(email)) {
+    throw new HttpError(400, 'Use your college email ending in @somaiya.edu.');
+  }
+  return email;
+}
+
+function mapUser(user, profile) {
+  return {
+    id: user.id,
+    name: profile.full_name,
+    email: user.email,
+    role: profile.role,
+    counterId: profile.counter_id,
+    verified: Boolean(user.email_confirmed_at || user.confirmed_at)
+  };
+}
+
+function mapMenuItem(item) {
+  return {
+    itemId: item.id,
+    id: item.id,
+    name: item.name,
+    category: item.category,
+    price: item.price,
+    prepTimeMinutes: item.prep_time_minutes,
+    veg: item.veg,
+    available: item.available,
+    popular: item.popular,
+    description: item.description || '',
+    image: item.image_url || ''
+  };
+}
+
+function mapOrder(order, customerEmail = '') {
+  return {
+    _id: order.id,
+    id: order.id,
+    orderNumber: order.order_number,
+    userId: order.user_id,
+    pickupSlot: order.pickup_slot,
+    paymentMethod: order.payment_method,
+    status: order.status,
+    total: order.total,
+    customerName: order.customer_name,
+    customerEmail,
+    instructions: order.instructions || '',
+    createdAt: order.created_at,
+    items: (order.items || []).map(item => ({
+      _id: item.id,
+      id: item.id,
+      menuItemId: item.menu_item_id,
+      name: item.item_name,
+      quantity: item.quantity,
+      price: item.unit_price,
+      counterId: item.counter_id,
+      status: item.status,
+      instructions: item.instructions || '',
+      prepTimeMinutes: item.prep_time_minutes,
+      readyAt: item.estimated_ready_at
+    }))
+  };
+}
+
+const orderSelect = 'id,order_number,user_id,pickup_slot,payment_method,status,total,customer_name,instructions,created_at,items:ql_order_items(id,menu_item_id,item_name,quantity,unit_price,counter_id,status,instructions,prep_time_minutes,estimated_ready_at)';
+
+function validateProfileName(value) {
+  const name = String(value || '').trim();
+  if (name.length < 2 || name.length > 100) {
+    throw new HttpError(400, 'Name must be 2–100 characters.');
+  }
+  return name;
+}
+
+function validateCounter(value) {
+  const counter = String(value || '');
+  if (!['C1', 'C2', 'C3', 'C4'].includes(counter)) {
+    throw new HttpError(400, 'Choose a valid counter.');
+  }
+  return counter;
+}
+
+app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'QueueLess Supabase API' }));
+
+app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
+  const name = validateProfileName(req.body?.name);
+  const email = requireSomaiyaEmail(req.body?.email);
+  const password = String(req.body?.password || '');
+  const passwordError = getPasswordPolicyError(password);
+  if (passwordError) throw new HttpError(400, passwordError);
+  const requestedRole = String(req.body?.requestedRole || 'student');
+  if (!['student', 'staff', 'admin'].includes(requestedRole)) {
+    throw new HttpError(400, 'Choose a valid account role.');
+  }
+  const requestedCounter = req.body?.requestedCounter
+    ? validateCounter(req.body.requestedCounter)
+    : null;
+  const rollNumber = String(req.body?.rollNumber || '').trim().slice(0, 40);
+  const { data, error } = await publicAuthClient().auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${process.env.APP_BASE_URL || 'http://localhost:3000'}/login.html?verified=1`,
+      data: {
+        full_name: name,
+        roll_number: rollNumber,
+        requested_role: requestedRole,
+        requested_counter: requestedCounter
+      }
     }
-    res.json({message:'If the account exists and is unverified, a new code has been sent.'});
-  }catch{res.status(500).json({error:'Could not resend code.'});}
-});
+  });
+  if (error) throw new HttpError(error.status === 422 ? 409 : 400, error.message);
+  res.status(201).json({
+    message: 'Account created. Check your Somaiya email for a verification code.',
+    email,
+    verificationRequired: !data.session
+  });
+}, 'Could not create account.'));
 
-// ─── Auth: Login ───────────────────────────────────────────────────────────────
-app.post('/api/auth/login',authLimiter,async(req,res)=>{
-  try{
-    const email=String(req.body.email||'').trim().toLowerCase(),password=String(req.body.password||'');
-    if(!isSomaiyaEmail(email))return res.status(400).json({error:'Use your college email ending in @somaiya.edu.'});
-    const u=await User.findOne({email});
-    if(!u||!(await bcrypt.compare(password,u.passwordHash)))return res.status(401).json({error:'Email or password is incorrect.'});
-    if(!u.verified){
-      // Auto-send a fresh OTP so user can verify inline on the login page
-      const {otp,hash}=generateOtp();
-      u.otpHash=hash;
-      u.otpExpires=new Date(Date.now()+15*60*1000);
-      u.otpAttempts=0;
-      await u.save();
-      const mail=await sendOtpEmail(u,otp);
+app.post('/api/auth/verify-otp', otpLimiter, asyncRoute(async (req, res) => {
+  const email = requireSomaiyaEmail(req.body?.email);
+  const token = String(req.body?.otp || '').trim().replace(/\s/g, '');
+  if (!/^\d{6}$/.test(token)) throw new HttpError(400, 'Enter the 6-digit verification code.');
+  const { error } = await publicAuthClient().auth.verifyOtp({ email, token, type: 'email' });
+  if (error) throw new HttpError(400, error.message);
+  res.json({ ok: true, message: 'Email verified! You can now sign in.' });
+}, 'Could not verify code.'));
+
+app.post('/api/auth/resend-otp', resendOtpLimiter, asyncRoute(async (req, res) => {
+  const email = requireSomaiyaEmail(req.body?.email);
+  const { error } = await publicAuthClient().auth.resend({ type: 'signup', email });
+  if (error) throw new HttpError(400, error.message);
+  res.json({ message: 'If the account exists and is unverified, a new code has been sent.' });
+}, 'Could not resend code.'));
+
+app.post('/api/auth/login', authLimiter, asyncRoute(async (req, res) => {
+  const email = requireSomaiyaEmail(req.body?.email);
+  const password = String(req.body?.password || '');
+  const { data, error } = await publicAuthClient().auth.signInWithPassword({ email, password });
+  if (error) {
+    const unverified = /not confirmed|email_not_confirmed/i.test(`${error.code || ''} ${error.message}`);
+    if (unverified) {
       return res.status(403).json({
-        error:'Please verify your email first. A new code has been sent.',
-        verificationRequired:true,
-        email:u.email,
-        devOtp:mail.devOtp||undefined
+        error: 'Please verify your email before signing in.',
+        verificationRequired: true,
+        email
       });
     }
-    if(ADMIN_EMAILS.has(u.email)&&u.role!=='admin'){u.role='admin';await u.save();}
-    const token=issueToken(u);
-    res.json({token,user:safeUser(u)});
-  }catch(e){console.error(e);res.status(500).json({error:'Could not sign in.'});}
+    throw new HttpError(error.status === 429 ? 429 : 401, 'Email or password is incorrect.');
+  }
+  const { data: profile, error: profileError } = await userClient(data.session.access_token)
+    .from('ql_profiles')
+    .select('user_id,full_name,phone,roll_number,role,counter_id')
+    .eq('user_id', data.user.id)
+    .single();
+  if (profileError || !profile) throw new HttpError(403, 'Your QueueLess profile is unavailable.');
+  res.json({
+    token: data.session.access_token,
+    refreshToken: data.session.refresh_token,
+    user: mapUser(data.user, profile)
+  });
+}, 'Could not sign in.'));
+
+app.post('/api/auth/refresh', authLimiter, asyncRoute(async (req, res) => {
+  const refreshToken = String(req.body?.refreshToken || '');
+  if (!refreshToken) throw new HttpError(400, 'Your session has expired. Please sign in again.');
+  const { data, error } = await publicAuthClient().auth.refreshSession({ refresh_token: refreshToken });
+  if (error || !data.session || !data.user) throw new HttpError(401, 'Your session has expired. Please sign in again.');
+  if (!isSomaiyaEmail(data.user.email || '')) throw new HttpError(403, 'Use an account ending in @somaiya.edu.');
+  const { data: profile, error: profileError } = await userClient(data.session.access_token)
+    .from('ql_profiles')
+    .select('user_id,full_name,phone,roll_number,role,counter_id')
+    .eq('user_id', data.user.id)
+    .single();
+  if (profileError || !profile) throw new HttpError(403, 'Your QueueLess profile is unavailable.');
+  res.json({
+    token: data.session.access_token,
+    refreshToken: data.session.refresh_token,
+    user: mapUser(data.user, profile)
+  });
+}, 'Could not refresh your session.'));
+
+app.get('/api/auth/me', auth, (req, res) => {
+  res.json({ user: mapUser(req.auth, req.profile) });
 });
 
-// ─── Auth: Me / Logout / Profile / Password ────────────────────────────────────
-app.get('/api/auth/me',auth,async(req,res)=>{const u=await User.findById(req.auth.sub);if(!u)return res.status(401).json({error:'Account not found.'});res.json({user:safeUser(u)});});
-app.post('/api/auth/logout',(_req,res)=>res.json({ok:true}));
-app.patch('/api/auth/profile',auth,async(req,res)=>{try{const u=await User.findById(req.auth.sub);if(!u)return res.status(401).json({error:'Account not found.'});if(req.body.name!==undefined){const name=String(req.body.name).trim();if(name.length<2||name.length>100)return res.status(400).json({error:'Name must be 2–100 characters.'});u.name=name;}await u.save();res.json({user:safeUser(u)});}catch{res.status(500).json({error:'Could not update profile.'});}});
-app.patch('/api/auth/password',auth,async(req,res)=>{try{const u=await User.findById(req.auth.sub);if(!u||!(await bcrypt.compare(String(req.body.currentPassword||''),u.passwordHash)))return res.status(400).json({error:'Current password is incorrect.'});const next=String(req.body.newPassword||'');const passwordError=getPasswordPolicyError(next,'New password');if(passwordError)return res.status(400).json({error:passwordError});u.passwordHash=await bcrypt.hash(next,12);await u.save();res.json({ok:true});}catch{res.status(500).json({error:'Could not change password.'});}});
+app.post('/api/auth/logout', asyncRoute(async (req, res) => {
+  const refreshToken = String(req.body?.refreshToken || '');
+  if (refreshToken) {
+    const client = publicAuthClient();
+    const { error: sessionError } = await client.auth.setSession({
+      access_token: readBearerToken(req) || '',
+      refresh_token: refreshToken
+    });
+    if (sessionError) throw new HttpError(401, 'Could not end this session. Please sign in again.');
+    const { error } = await client.auth.signOut({ scope: 'local' });
+    if (error) throw error;
+  }
+  res.json({ ok: true });
+}, 'Could not end this session.'));
 
-// ─── Menu ──────────────────────────────────────────────────────────────────────
-app.get('/api/menu',async(_req,res)=>res.json({items:await Menu.find({}).sort({category:1,name:1}).lean()}));
+app.patch('/api/auth/profile', auth, asyncRoute(async (req, res) => {
+  const updates = {};
+  if (req.body?.name !== undefined) updates.full_name = validateProfileName(req.body.name);
+  if (req.body?.phone !== undefined) updates.phone = String(req.body.phone).trim().slice(0, 30) || null;
+  if (req.body?.rollNumber !== undefined) updates.roll_number = String(req.body.rollNumber).trim().slice(0, 40) || null;
+  if (!Object.keys(updates).length) throw new HttpError(400, 'Provide profile details to update.');
+  const { data: profile, error } = await req.db.from('ql_profiles')
+    .update(updates).eq('user_id', req.auth.id)
+    .select('user_id,full_name,phone,roll_number,role,counter_id').single();
+  if (error) throw error;
+  res.json({ user: mapUser(req.auth, profile) });
+}, 'Could not update profile.'));
 
-// ─── Admin: Staff Access ───────────────────────────────────────────────────────
-app.get('/api/admin/staff-access',auth,roles('admin'),async(_req,res)=>{const users=await User.find({role:{$in:['staff','student']}}).select('name email role counterId verified createdAt').sort({role:1,name:1}).lean();res.json({users:users.map(u=>({...u,id:String(u._id)}))});});
-app.post('/api/admin/staff-access/approve',auth,roles('admin'),async(req,res)=>{try{const email=String(req.body.email||'').trim().toLowerCase(),counterId=String(req.body.counterId||'');if(!isSomaiyaEmail(email))return res.status(400).json({error:'Enter the exact @somaiya.edu email used to sign up.'});if(!['C1','C2','C3','C4'].includes(counterId))return res.status(400).json({error:'Choose a valid counter.'});const user=await User.findOne({email});if(!user)return res.status(404).json({error:'No account found for that email. Ask the person to sign up first.'});if(ADMIN_EMAILS.has(email)||user.role==='admin')return res.status(400).json({error:'Admin accounts cannot be changed to staff.'});user.role='staff';user.counterId=counterId;await user.save();res.json({message:'Staff access approved.',user:safeUser(user)});}catch(e){console.error(e);res.status(500).json({error:'Could not approve staff access.'});}});
-app.patch('/api/admin/staff-access/:userId/revoke',auth,roles('admin'),async(req,res)=>{try{const user=await User.findById(req.params.userId);if(!user)return res.status(404).json({error:'Account not found.'});if(user.role==='admin'||ADMIN_EMAILS.has(user.email))return res.status(400).json({error:'Admin access cannot be revoked here.'});user.role='student';user.counterId=null;await user.save();res.json({message:'Staff access revoked.',user:safeUser(user)});}catch(e){res.status(500).json({error:'Could not revoke staff access.'});}});
+app.patch('/api/auth/password', auth, authLimiter, asyncRoute(async (req, res) => {
+  const currentPassword = String(req.body?.currentPassword || '');
+  const newPassword = String(req.body?.newPassword || '');
+  const policyError = getPasswordPolicyError(newPassword, 'New password');
+  if (policyError) throw new HttpError(400, policyError);
+  const { error: currentError } = await publicAuthClient().auth.signInWithPassword({
+    email: req.auth.email,
+    password: currentPassword
+  });
+  if (currentError) throw new HttpError(400, 'Current password is incorrect.');
+  const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    method: 'PUT',
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${readBearerToken(req)}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ password: newPassword })
+  });
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new HttpError(400, errorBody.msg || errorBody.message || 'Could not update password.');
+  }
+  res.json({ ok: true });
+}, 'Could not change password.'));
 
-// ─── Menu Management ───────────────────────────────────────────────────────────
-app.put('/api/menu/:itemId',auth,roles('admin'),async(req,res)=>{try{const itemId=String(req.params.itemId).trim();const b=req.body||{};if(!itemId||!String(b.name||'').trim()||!String(b.category||'').trim()||!Number.isFinite(Number(b.price))||Number(b.price)<0)return res.status(400).json({error:'Provide item ID, name, category and a valid price.'});const item=await Menu.findOneAndUpdate({itemId},{$set:{itemId,name:String(b.name).trim(),category:String(b.category).trim(),price:Number(b.price),prepTimeMinutes:Math.max(1,Number(b.prepTimeMinutes||5)),available:b.available!==false,popular:!!b.popular,description:String(b.description||b.desc||''),image:String(b.image||''),veg:b.veg!==false}},{new:true,upsert:true,runValidators:true});res.json({item});}catch{res.status(500).json({error:'Could not save menu item.'});}});
-app.patch('/api/menu/:itemId',auth,roles('admin','staff'),async(req,res)=>{const item=await Menu.findOne({itemId:req.params.itemId});if(!item)return res.status(404).json({error:'Menu item not found.'});if(req.user.role==='staff'&&counterFor(item.category)!==req.user.counterId)return res.status(403).json({error:'This item belongs to another counter.'});for(const k of ['available','prepTimeMinutes'])if(req.body[k]!==undefined)item[k]=req.body[k];if(req.user.role==='admin')for(const k of ['name','category','price','description','image','popular'])if(req.body[k]!==undefined)item[k]=req.body[k];await item.save();res.json({item});});
+app.get('/api/menu', asyncRoute(async (req, res) => {
+  const token = readBearerToken(req);
+  let db = authClient;
+  if (token) {
+    await authenticate(req);
+    db = req.db;
+  }
+  const { data, error } = await db.from('ql_menu_items')
+    .select('*').order('category').order('name');
+  if (error) throw error;
+  res.json({ items: data.map(mapMenuItem) });
+}, 'Could not load the menu.'));
 
-// ─── Orders ────────────────────────────────────────────────────────────────────
-app.post('/api/orders',auth,roles('student','staff','admin'),async(req,res)=>{try{const items=req.body.items;if(!Array.isArray(items)||!items.length)return res.status(400).json({error:'Cart is empty.'});const pickupSlot=new Date(req.body.pickupSlot);if(!Number.isFinite(pickupSlot.getTime()))return res.status(400).json({error:'Choose a valid pickup slot.'});const hour=pickupSlot.getHours()+pickupSlot.getMinutes()/60;if(hour<6||hour>=19)return res.status(400).json({error:'Pickup slots must be between 6:00 AM and 7:00 PM.'});if(pickupSlot.getTime()<Date.now()-60_000)return res.status(400).json({error:'Pickup slot is in the past.'});if(pickupSlot.getMinutes()%7!==0)return res.status(400).json({error:'Choose a 7-minute pickup slot.'});const count=await Order.countDocuments({pickupSlot});if(count>=10)return res.status(409).json({error:'This pickup slot is full. Choose another slot.'});const ids=items.map(x=>String(x.id||x.menuItemId));const menu=await Menu.find({itemId:{$in:ids},available:true}).lean();if(menu.length!==new Set(ids).size)return res.status(400).json({error:'One or more menu items are unavailable. Refresh the menu.'});const byId=new Map(menu.map(m=>[m.itemId,m]));const orderItems=items.map(i=>{const m=byId.get(String(i.id||i.menuItemId));const quantity=Number(i.qty??i.quantity);if(!Number.isInteger(quantity)||quantity<1||quantity>30)throw new Error('Item quantity must be between 1 and 30.');return {menuItemId:m.itemId,name:m.name,price:m.price,quantity,instructions:String(i.instructions||'').slice(0,250),counterId:counterFor(m.category),status:'received',prepTimeMinutes:m.prepTimeMinutes};});const total=orderItems.reduce((s,i)=>s+i.price*i.quantity,0);const order=await Order.create({orderNumber:Date.now()%1000000,userId:req.auth.sub,customerName:(await User.findById(req.auth.sub).select('name email').lean())?.name||'Student',customerEmail:req.auth.email,items:orderItems,pickupSlot,paymentMethod:req.body.paymentMethod==='demo'?'demo':(req.body.paymentMethod==='online'?'online':'pay-at-counter'),paymentStatus:req.body.paymentMethod==='online'?'pending':'not-required',instructions:String(req.body.instructions||'').slice(0,500),total,status:'received'});res.status(201).json({order});}catch(e){res.status(400).json({error:e.message||'Could not create order.'});}});
-app.get('/api/orders/mine',auth,async(req,res)=>res.json({orders:await Order.find({userId:req.auth.sub}).sort({createdAt:-1}).limit(100).lean()}));
+app.get('/api/admin/staff-access', roles('admin'), asyncRoute(async (req, res) => {
+  const { data, error } = await req.db.rpc('ql_admin_list_profiles', {
+    p_requested_role: null,
+    p_email: null
+  });
+  if (error) throw error;
+  res.json({
+    users: data.map(user => ({
+      id: user.user_id,
+      name: user.full_name,
+      email: user.email,
+      role: user.role,
+      counterId: user.counter_id,
+      requestedRole: user.requested_role,
+      requestedCounter: user.requested_counter,
+      verified: user.verified,
+      createdAt: user.created_at
+    }))
+  });
+}, 'Could not load accounts.'));
 
-// Staff queue: returns all non-collected orders filtered by counter for staff role
-app.get('/api/orders/queue',auth,roles('staff','admin'),async(req,res)=>{
-  const q={status:{$ne:'collected'}};
-  if(req.user.role==='staff') q['items.counterId']=req.user.counterId;
-  res.json({orders:await Order.find(q).sort({pickupSlot:1,createdAt:1}).limit(250).lean()});
+app.post('/api/admin/staff-access/approve', roles('admin'), asyncRoute(async (req, res) => {
+  const email = requireSomaiyaEmail(req.body?.email);
+  const counterId = validateCounter(req.body?.counterId);
+  const { data: matches, error: lookupError } = await req.db.rpc('ql_admin_list_profiles', {
+    p_requested_role: null,
+    p_email: email
+  });
+  if (lookupError) throw lookupError;
+  if (!matches.length) throw new HttpError(404, 'No registered account was found for that email.');
+  const { data, error } = await req.db.rpc('ql_admin_update_profile', {
+    p_user_id: matches[0].user_id,
+    p_role: 'staff',
+    p_counter_id: counterId
+  });
+  if (error) throw error;
+  res.json({ message: `${matches[0].full_name} approved as staff.`, user: data });
+}, 'Could not approve staff access.'));
+
+app.patch('/api/admin/staff-access/:userId/revoke', roles('admin'), asyncRoute(async (req, res) => {
+  const { data, error } = await req.db.rpc('ql_admin_update_profile', {
+    p_user_id: req.params.userId,
+    p_role: 'student',
+    p_counter_id: null
+  });
+  if (error) throw error;
+  res.json({ message: 'Staff access revoked.', user: data });
+}, 'Could not revoke staff access.'));
+
+app.put('/api/menu/:itemId', roles('admin'), asyncRoute(async (req, res) => {
+  const itemId = String(req.params.itemId || '').trim();
+  const body = req.body || {};
+  const name = String(body.name || '').trim();
+  const category = String(body.category || '').trim();
+  const price = Number(body.price);
+  const prepTime = Number(body.prepTimeMinutes || 5);
+  if (!itemId || !name || !category || !Number.isInteger(price) || price < 0 ||
+      !Number.isInteger(prepTime) || prepTime < 1 || prepTime > 180) {
+    throw new HttpError(400, 'Provide an item ID, name, category, valid price, and preparation time.');
+  }
+  const { data, error } = await req.db.rpc('ql_admin_save_menu_item', {
+    p_id: itemId,
+    p_name: name,
+    p_category: category,
+    p_price: price,
+    p_prep_time_minutes: prepTime,
+    p_available: body.available !== false,
+    p_popular: Boolean(body.popular),
+    p_description: String(body.description || body.desc || '').slice(0, 500),
+    p_image_url: String(body.image || '').slice(0, 1000)
+  });
+  if (error) throw error;
+  res.json({ item: mapMenuItem(data) });
+}, 'Could not save menu item.'));
+
+app.patch('/api/menu/:itemId', roles('admin', 'staff'), asyncRoute(async (req, res) => {
+  const itemId = String(req.params.itemId || '').trim();
+  const { data: existing, error: lookupError } = await req.db.from('ql_menu_items')
+    .select('*').eq('id', itemId).maybeSingle();
+  if (lookupError) throw lookupError;
+  if (!existing) throw new HttpError(404, 'Menu item not found.');
+
+  let data;
+  let error;
+  if (req.profile.role === 'staff') {
+    const prepTime = Number(req.body?.prepTimeMinutes ?? existing.prep_time_minutes);
+    if (!Number.isInteger(prepTime) || prepTime < 1 || prepTime > 180) {
+      throw new HttpError(400, 'Preparation time must be between 1 and 180 minutes.');
+    }
+    ({ data, error } = await req.db.rpc('ql_staff_update_menu_item', {
+      p_id: itemId,
+      p_available: req.body?.available === undefined ? existing.available : req.body.available === true,
+      p_prep_time_minutes: prepTime
+    }));
+  } else {
+    const body = req.body || {};
+    ({ data, error } = await req.db.rpc('ql_admin_save_menu_item', {
+      p_id: itemId,
+      p_name: String(body.name ?? existing.name).trim(),
+      p_category: String(body.category ?? existing.category).trim(),
+      p_price: Number(body.price ?? existing.price),
+      p_prep_time_minutes: Number(body.prepTimeMinutes ?? existing.prep_time_minutes),
+      p_available: body.available === undefined ? existing.available : body.available === true,
+      p_popular: body.popular === undefined ? existing.popular : body.popular === true,
+      p_description: String(body.description ?? existing.description ?? '').slice(0, 500),
+      p_image_url: String(body.image ?? existing.image_url ?? '').slice(0, 1000)
+    }));
+  }
+  if (error) throw error;
+  res.json({ item: mapMenuItem(data) });
+}, 'Could not update menu item.'));
+
+app.post('/api/orders', roles('student', 'staff', 'admin'), asyncRoute(async (req, res) => {
+  if (!Array.isArray(req.body?.items) || req.body.items.length === 0) {
+    throw new HttpError(400, 'Cart is empty.');
+  }
+  const items = req.body.items.map(item => ({
+    menuItemId: String(item.id || item.menuItemId || ''),
+    quantity: Number(item.qty ?? item.quantity),
+    instructions: String(item.instructions || '').slice(0, 250)
+  }));
+  if (items.some(item => !item.menuItemId || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 99)) {
+    throw new HttpError(400, 'Check item IDs and quantities in your cart.');
+  }
+  const pickupSlot = new Date(req.body.pickupSlot);
+  if (!Number.isFinite(pickupSlot.getTime()) || pickupSlot.getTime() < Date.now() - 60_000) {
+    throw new HttpError(400, 'Choose a valid future pickup slot.');
+  }
+  const paymentMethod = ['pay-at-counter', 'online', 'demo'].includes(req.body.paymentMethod)
+    ? req.body.paymentMethod
+    : 'pay-at-counter';
+  const { data: createdOrder, error: orderError } = await req.db.rpc('ql_create_order', {
+    p_items: items,
+    p_pickup_slot: pickupSlot.toISOString(),
+    p_payment_method: paymentMethod,
+    p_instructions: String(req.body.instructions || '').slice(0, 500)
+  });
+  if (orderError) throw orderError;
+  const { data: order, error } = await req.db.from('ql_orders')
+    .select(orderSelect).eq('id', createdOrder.id).eq('user_id', req.auth.id).single();
+  if (error) throw error;
+  res.status(201).json({ order: mapOrder(order, req.auth.email) });
+}, 'Could not create order.'));
+
+app.get('/api/orders/mine', auth, asyncRoute(async (req, res) => {
+  const { data, error } = await req.db.from('ql_orders')
+    .select(orderSelect).eq('user_id', req.auth.id)
+    .order('created_at', { ascending: false }).limit(100);
+  if (error) throw error;
+  res.json({ orders: data.map(order => mapOrder(order, req.auth.email)) });
+}, 'Could not load your orders.'));
+
+app.get('/api/orders/queue', roles('staff', 'admin'), asyncRoute(async (req, res) => {
+  const { data, error } = await req.db.from('ql_orders')
+    .select(orderSelect).neq('status', 'collected')
+    .order('pickup_slot').order('created_at').limit(250);
+  if (error) throw error;
+  res.json({ orders: data.map(order => mapOrder(order)) });
+}, 'Could not load the staff queue.'));
+
+app.patch('/api/orders/:orderId/items/:itemId/status', roles('staff', 'admin'), asyncRoute(async (req, res) => {
+  const { data: item, error: lookupError } = await req.db.from('ql_order_items')
+    .select('id,order_id').eq('id', req.params.itemId).maybeSingle();
+  if (lookupError) throw lookupError;
+  if (!item || item.order_id !== req.params.orderId) throw new HttpError(404, 'Order item not found.');
+  const { error } = await req.db.rpc('ql_update_item_status', {
+    p_order_item_id: req.params.itemId,
+    p_new_status: String(req.body?.status || '')
+  });
+  if (error) throw error;
+  res.json({ ok: true });
+}, 'Could not update order status.'));
+
+app.use(express.static(path.resolve(__dirname, '..')));
+
+app.listen(port, () => {
+  console.log(`QueueLess running at http://localhost:${port}`);
 });
-
-app.patch('/api/orders/:orderId/items/:itemId/status',auth,roles('staff','admin'),async(req,res)=>{const allowed={received:'accepted',accepted:'preparing',preparing:'ready',ready:'collected'};const order=await Order.findById(req.params.orderId);if(!order)return res.status(404).json({error:'Order not found.'});const item=order.items.id(req.params.itemId);if(!item)return res.status(404).json({error:'Order item not found.'});if(req.user.role==='staff'&&item.counterId!==req.user.counterId)return res.status(403).json({error:'This order belongs to another counter.'});if(allowed[item.status]!==req.body.status)return res.status(400).json({error:'Invalid status transition.'});item.status=req.body.status;order.status=order.items.every(i=>i.status==='collected')?'collected':order.items.some(i=>i.status==='ready')?'ready':order.items.some(i=>i.status==='preparing')?'preparing':order.items.some(i=>i.status==='accepted')?'accepted':'received';await order.save();res.json({order});});
-
-// ─── Startup ───────────────────────────────────────────────────────────────────
-async function start(){
-  await mongoose.connect(process.env.MONGODB_URI,{dbName:process.env.MONGODB_DB||'queueless_demo',serverSelectionTimeoutMS:10000});
-  const n=await Menu.countDocuments();
-  if(n===0){await Menu.insertMany(menuSeed.map(x=>({...x})),{ordered:false});console.log(`Imported ${menuSeed.length} menu items into MongoDB.`);}
-  else console.log(`Menu collection already contains ${n} items; preserving existing data.`);
-  app.use(express.static(path.resolve(__dirname,'..')));
-  app.listen(PORT,()=>console.log(`QueueLess running at http://localhost:${PORT}`));
-}
-start().catch(e=>{console.error('MongoDB startup failed:',e.message);process.exit(1);});

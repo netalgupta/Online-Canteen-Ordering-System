@@ -1,62 +1,61 @@
-# QueueLess — MongoDB + Express project demo
+# QueueLess — Express + Supabase
 
-This version keeps the existing HTML/CSS/vanilla-JavaScript UI and connects it to an Express API backed by MongoDB Atlas. **React is not required** for this architecture: React is a frontend library, while Express/Mongoose/bcrypt are backend packages. The frontend is served by Express so it should be opened at `http://localhost:3000`, not by double-clicking `index.html` (`file://`).
+QueueLess is a vanilla HTML/CSS/JavaScript canteen-ordering app served by an Express server. Supabase Auth owns accounts and sessions; Supabase Postgres stores profiles, menu items, and orders. Postgres Row Level Security (RLS) and restricted RPCs enforce data access and staff/admin actions.
 
-## Included in this demo
+## Requirements
 
-- Express server and REST API
-- MongoDB/Mongoose models for users, menu items, and orders
-- bcrypt password hashing and JWT authentication
-- 6-digit email OTP verification using SMTP (a development-only code is returned when SMTP is not configured)
-- Somaiya-only email accounts and password validation (8+ characters, uppercase, special character)
-- Server-side role checks for student, staff, and admin endpoints
-- Admin email allowlist, supporting comma-separated addresses in `ADMIN_EMAILS`
-- Automatic first-run import of the 159 menu seed records into the `queueless_demo` database, only if the menu collection is empty
-- Menu, checkout/order creation, staff queue, and status APIs
-- Four-counter routing and pickup-slot validation in the order endpoint
+- Node.js 18 or newer
+- A Supabase project with permission to apply the migrations in `supabase/migrations/`
 
-## 1. Start your MongoDB Atlas cluster
+## Configure Supabase
 
-The connected Atlas `Cluster0` was reported paused when checked. Open MongoDB Atlas → **Database → Cluster0** and resume/start it. In **Connect → Drivers → Node.js**, copy the connection string. Ensure your current IP is permitted under Network Access and that you have a database user. Never paste the URI into frontend JavaScript or commit it to Git.
+1. Apply the SQL migrations in filename order, including `20261018000000_queueless_supabase_api.sql`. They add QueueLess-specific tables and functions; they do not replace the legacy SkipQ tables.
+2. Run `supabase/seed.sql` once in the Supabase SQL editor to add the initial QueueLess menu.
+3. In Supabase Auth, allow the local URL `http://localhost:3000`. For six-digit signup codes, configure the signup email template to include `{{ .Token }}`; verification emails are sent by Supabase Auth.
+4. Register a Somaiya account through QueueLess. Promote the first trusted admin from the Supabase SQL editor:
 
-## 2. Install and configure
+   ```sql
+   update public.ql_profiles p
+   set role = 'admin', counter_id = null
+   from auth.users u
+   where u.id = p.user_id
+     and lower(u.email) = lower('YOUR_ADMIN_EMAIL');
+   ```
 
-From the project root folder (the folder containing this README):
+The app enforces `@somaiya.edu` addresses and passwords with at least eight characters, an uppercase letter, and a special character. Every public signup starts as a student; the requested role is only a request. An admin grants staff/admin privileges through the staff-access page. A role request never grants access by itself.
 
-```bash
+## Run locally
+
+```powershell
 npm install
+Copy-Item server\.env.example server\.env
 ```
 
-Copy `server/.env.example` to `server/.env`, then edit `server/.env`:
+Set `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in `server/.env` using the project URL and publishable (or legacy anon) key from Supabase **Project Settings → API Keys**. `APP_BASE_URL` defaults to `http://localhost:3000`.
 
-- `MONGODB_URI`: your Atlas connection string
-- `MONGODB_DB=queueless_demo`
-- `JWT_SECRET`: replace with a long random value of at least 32 characters
-- `ADMIN_EMAILS=your.name@somaiya.edu` (add trusted Somaiya addresses separated by commas; the default is empty)
-- `APP_BASE_URL=http://localhost:3000`
-- Optional SMTP settings for real verification emails: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `MAIL_FROM`
+The Node server uses only the public publishable/anon key and the signed-in user's access token. **Do not put a service-role/secret key in the app or commit it.** Supabase RLS policies and server-guarded RPCs are the authorization boundary.
 
-Do not share or commit `server/.env`.
-
-## 3. Run the app
-
-```bash
+```powershell
 npm start
 ```
 
-Then open `http://localhost:3000`. The first successful server start imports the 159 menu items if the MongoDB menu collection is empty. Subsequent starts preserve the existing menu and admin edits.
+Open `http://localhost:3000`; do not open the HTML files through `file://`.
 
-For syntax and contract checks:
+## Backend routes
 
-```bash
+- `/api/auth/*`: registration, OTP verification/resend, login, profile, and password updates
+- `/api/menu`: public menu reads; admin/staff menu writes use role-checked RPCs
+- `/api/orders`: transactional order creation, personal order history, staff queue, and item status transitions
+- `/api/admin/staff-access`: admin-only account listing, staff approval, counter assignment, and revocation
+
+The browser calls the same-origin Express API. It does not contain Supabase credentials or access database tables directly. User-scoped requests carry the Supabase access token; RLS ensures students see only their own orders and counter staff can update only their assigned items. Order creation validates current menu prices and pickup-slot capacity transactionally in `ql_create_order`.
+
+## Verification
+
+```powershell
 npm run check:js
 npm test
+npm audit
 ```
 
-## Authentication and email redirects
-
-Registration accepts only `@somaiya.edu` addresses and requires passwords of at least eight characters with one uppercase and one special character. Password changes enforce the same policy. Registration always creates a Student account unless the email is in the server-side `ADMIN_EMAILS` allowlist; the configured admin addresses must also use `@somaiya.edu`. Users cannot grant themselves Staff or Admin access from the registration form. Email is verified with a 6-digit OTP. OTP endpoints are rate-limited and OTP comparisons are constant-time. Configure SMTP for real verification emails; production startup refuses to run without SMTP, while local development can use the returned development OTP.
-
-## Current scope and limitations
-
-This is a college-project integration, not a production security certification. Atlas must be running and `.env` correctly configured to test live database operations. Online payment is only recorded as a pending method and does not charge money. The pickup capacity check is appropriate for a single-user classroom demo but should be made transactionally atomic before real concurrent production traffic. Some secondary profile/settings screens may still need feature-specific testing. The old `supabase/` folder is retained as a reference for the later production migration; it is not required to run this MongoDB demo.
+Live signup, email delivery, database queries, and order flows require a configured Supabase project and the migrations above.

@@ -1,7 +1,7 @@
-/* QueueLess MongoDB auth/session guards. */
+/* QueueLess Supabase-backed auth/session guards. */
 function qlLogin(name,email,role='student',approved=true,counterId=null){const user={name:name||'Student',email:email||'',role,approved,counterId};localStorage.setItem('ql_user',JSON.stringify(user));}
-async function qlLogout(){try{if(window.qlBackend)await window.qlBackend.signOut();}catch(e){console.error(e);}localStorage.removeItem('ql_cart');localStorage.removeItem('ql_mongo_token');sessionStorage.clear();window.location.replace(qlAuthLoginPath());}
+async function qlLogout(){try{if(window.qlBackend)await window.qlBackend.signOut();}catch(e){console.error(e);}localStorage.removeItem('ql_cart');localStorage.removeItem('ql_supabase_token');sessionStorage.clear();window.location.replace(qlAuthLoginPath());}
 function qlRoleHome(role){if(role==='admin')return 'admin/dashboard.html';if(role==='staff')return 'staff/dashboard.html';return 'student/dashboard.html';}
 function qlAuthLoginPath(){return /\/(staff|admin|student)\//.test(window.location.pathname)?'../login.html':'login.html';}
-function qlRequireAuth(){const token=localStorage.getItem('ql_mongo_token');const user=typeof qlGetUser==='function'?qlGetUser():null;if(!token||!user||!user.role){window.location.replace(qlAuthLoginPath());return false;}if(window.QL_BACKEND_READY)window.QL_BACKEND_READY.then(u=>{if(!u)window.location.replace(qlAuthLoginPath());});return true;}
+function qlRequireAuth(){const token=localStorage.getItem('ql_supabase_token');const user=typeof qlGetUser==='function'?qlGetUser():null;if(!token||!user||!user.role){window.location.replace(qlAuthLoginPath());return false;}if(window.QL_BACKEND_READY)window.QL_BACKEND_READY.then(u=>{if(!u)window.location.replace(qlAuthLoginPath());});return true;}
 function qlRequireRole(role){if(!qlRequireAuth())return false;const user=typeof qlGetUser==='function'?qlGetUser():null;if(user?.role!==role){alert('This area is restricted to authorized '+role+' accounts.');window.location.replace(qlAuthLoginPath());return false;}return true;}

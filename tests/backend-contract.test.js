@@ -2,45 +2,43 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const root = path.resolve(__dirname, '..');
-const read = p => fs.readFileSync(path.join(root, p), 'utf8');
+const vm = require('node:vm');
 
-test('MongoDB backend dependencies and root npm start are configured', () => {
+const root = path.resolve(__dirname, '..');
+const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+const server = read('server/server.js');
+const migration = read('supabase/migrations/20261018000000_queueless_supabase_api.sql');
+const coreMigration = read('supabase/migrations/20261015072637_queueless_core_backend.sql');
+
+test('the active app starts Express with Supabase and no Mongo runtime dependencies', () => {
   const pkg = JSON.parse(read('package.json'));
-  for (const dep of ['express','mongoose','bcryptjs','jsonwebtoken','dotenv','nodemailer']) assert.ok(pkg.dependencies[dep]);
+  for (const dependency of ['express', 'express-rate-limit', 'dotenv', '@supabase/supabase-js']) {
+    assert.ok(pkg.dependencies[dependency]);
+  }
+  for (const dependency of ['mongoose', 'bcryptjs', 'jsonwebtoken', 'nodemailer']) {
+    assert.equal(pkg.dependencies[dependency], undefined);
+  }
   assert.match(pkg.scripts.start, /server\/server\.js/);
+  assert.match(server, /createClient\(supabaseUrl, supabaseKey/);
+  assert.match(server, /QueueLess Supabase API/);
 });
-test('configured admin email is server-side and multiple emails are supported', () => {
-  const s = read('server/server.js');
-  assert.match(s, /ADMIN_EMAILS.*split\(','\)/);
-  assert.match(s, /process\.env\.ADMIN_EMAILS \|\| ''/);
-  assert.match(read('server/.env.example'), /ADMIN_EMAILS=your\.name@somaiya\.edu/);
-  assert.match(s, /ADMIN_EMAILS\.has\(email\)\?'admin':'student'/);
+
+test('server configuration only uses the Supabase publishable or anon key', () => {
+  const example = read('server/.env.example');
+  assert.match(example, /SUPABASE_URL=/);
+  assert.match(example, /SUPABASE_PUBLISHABLE_KEY=/);
+  assert.doesNotMatch(example, /SERVICE_ROLE|SECRET_KEY|MONGODB|JWT_SECRET/);
+  assert.doesNotMatch(server, /SUPABASE_SERVICE_ROLE|service_role/i);
 });
-test('passwords are hashed and JWTs are verified server-side', () => {
-  const s = read('server/server.js');
-  assert.match(s, /bcrypt\.hash\(password,12\)/);
-  assert.match(s, /bcrypt\.compare\(password,u\.passwordHash\)/);
-  assert.match(s, /jwt\.verify/);
+
+test('authenticated API requests verify the Supabase user and query their RLS-scoped profile', () => {
+  assert.match(server, /authClient\.auth\.getUser\(token\)/);
+  assert.match(server, /Authorization: `Bearer /);
+  assert.match(server, /\.from\('ql_profiles'\)/);
+  assert.match(server, /if \(!allowed\.includes\(req\.profile\.role\)\)/);
 });
-test('menu seed has unique ids and at least 100 items', () => {
-  const items = JSON.parse(read('server/seed-menu.json'));
-  assert.ok(items.length >= 100);
-  assert.equal(new Set(items.map(x => x.itemId)).size, items.length);
-});
-test('MongoDB adapter routes frontend auth, menu and orders through API', () => {
-  const b = read('js/backend.js');
-  assert.match(b, /\/api/);
-  assert.match(b, /\/orders/);
-  assert.match(b, /\/menu/);
-  assert.match(read('login.html'), /qlMongoAuth\.signIn/);
-  assert.match(read('register.html'), /qlMongoAuth\.signUp/);
-});
-test('registration does not let users self-assign staff/admin roles', () => {
-  assert.match(read('register.html'), /role!=='student'/);
-  assert.match(read('server/server.js'), /const role=ADMIN_EMAILS\.has\(email\)\?'admin':'student'/);
-});
-test('auth policy restricts accounts to Somaiya emails and requires strong passwords', async () => {
+
+test('signup enforces Somaiya/password rules and stores role selections as requests only', async () => {
   const { getPasswordPolicyError, isSomaiyaEmail } = await import('../server/src/utils/authValidation.js');
   assert.equal(isSomaiyaEmail('student@somaiya.edu'), true);
   assert.equal(isSomaiyaEmail('STUDENT@SOMAIYA.EDU'), true);
@@ -50,42 +48,86 @@ test('auth policy restricts accounts to Somaiya emails and requires strong passw
   assert.match(getPasswordPolicyError('campus!2026'), /uppercase/i);
   assert.match(getPasswordPolicyError('Campus2026'), /special character/i);
   assert.match(getPasswordPolicyError('Short!A'), /8 characters/i);
-});
-test('server auth routes enforce the email and password rules', () => {
-  const server = read('server/server.js');
-  assert.match(server, /if\(!isSomaiyaEmail\(email\)\)/);
+  assert.match(server, /if \(!isSomaiyaEmail\(email\)\)/);
   assert.match(server, /getPasswordPolicyError\(password\)/);
-  assert.match(server, /getPasswordPolicyError\(next,'New password'\)/);
-  assert.match(read('register.html'), /somaiya\\\.edu/);
-  assert.match(read('login.html'), /somaiya\\\.edu/);
-  assert.match(read('student/change-password.html'), /updatePassword\(current,n\)/);
-});
-test('OTP endpoints are rate-limited and OTP hashes are compared in constant time', () => {
-  const server = read('server/server.js');
-  assert.match(server, /from 'express-rate-limit'/);
-  assert.match(server, /\/api\/auth\/verify-otp',otpLimiter/);
-  assert.match(server, /\/api\/auth\/resend-otp',resendOtpLimiter/);
-  assert.match(server, /timingSafeEqual/);
-  assert.match(server, /NODE_ENV==='production'&&!emailTransport/);
-});
-test('email verification redirects back to the served app rather than an external localhost port', () => {
-  assert.match(read('server/server.js'), /OTP-based email verification/);
-  assert.match(read('server/.env.example'), /APP_BASE_URL=http:\/\/localhost:3000/);
-});
-test('four counter categories are preserved', () => {
-  const s = read('js/data.js');
-  for (const id of ['C1','C2','C3','C4']) assert.match(s, new RegExp(id + ': \\{'));
+  assert.match(server, /requested_role: requestedRole/);
+  assert.match(migration, /'student',\s*coalesce\(v_requested_role,'student'\)/);
+  assert.match(read('register.html'), /requestedRole:role/);
 });
 
-test('admin staff access is server-protected and supports approval/revocation', () => {
- const server=read('server/server.js');
- assert.match(server,/api\/admin\/staff-access\/approve/);
- assert.match(server,/roles\('admin'\)/);
- assert.match(server,/api\/admin\/staff-access\/:userId\/revoke/);
- assert.match(read('admin/staff-access.html'),/Approve as Staff/);
+test('OTP routes are rate-limited and use Supabase Auth verification/resend', () => {
+  assert.match(server, /from 'express-rate-limit'/);
+  assert.match(server, /\/api\/auth\/verify-otp', otpLimiter/);
+  assert.match(server, /\/api\/auth\/resend-otp', resendOtpLimiter/);
+  assert.match(server, /auth\.verifyOtp\(\{ email, token, type: 'email' \}\)/);
+  assert.match(server, /auth\.resend\(\{ type: 'signup', email \}\)/);
 });
-test('checkout uses a no-charge demo payment and server accepts it', () => {
- assert.match(read('student/checkout.html'),/Demo payment · no charge/);
- assert.match(read('server/server.js'),/enum:\['pay-at-counter','online','demo'\]/);
- assert.match(read('server/server.js'),/paymentMethod==='demo'\?'demo'/);
+
+test('role and email changes are protected by narrow profile grants and admin RPCs', () => {
+  assert.match(migration, /revoke update on public\.ql_profiles from authenticated/);
+  assert.match(migration, /grant update \(full_name, phone, roll_number\)/);
+  assert.match(migration, /auth\.uid\(\) is null or public\.ql_my_role\(\) <> 'admin'/);
+  assert.match(migration, /ql_admin_update_profile/);
+  assert.match(migration, /ql_admin_list_profiles/);
+  assert.match(server, /\/api\/admin\/staff-access\/approve/);
+  assert.match(server, /\/api\/admin\/staff-access\/:userId\/revoke/);
+  assert.match(server, /roles\('admin'\)/);
+});
+
+test('menu and order handlers use the existing RLS-protected tables and RPCs', () => {
+  assert.match(server, /from\('ql_menu_items'\)/);
+  assert.match(server, /rpc\('ql_admin_save_menu_item'/);
+  assert.match(server, /rpc\('ql_staff_update_menu_item'/);
+  assert.match(server, /rpc\('ql_create_order'/);
+  assert.match(server, /rpc\('ql_update_item_status'/);
+  assert.match(coreMigration, /pg_advisory_xact_lock/);
+  assert.match(coreMigration, /PICKUP_SLOT_FULL/);
+  assert.match(coreMigration, /create policy ql_orders_read_owner_staff_admin/);
+  assert.match(coreMigration, /create policy ql_order_items_read_owner_counter_admin/);
+});
+
+test('browser pages use the same-origin API adapter without a hard-coded Supabase client', () => {
+  const auth = read('js/supabase-auth.js');
+  const backend = read('js/backend.js');
+  assert.match(auth, /fetch\(`\/api\$\{path\}`/);
+  assert.match(auth, /ql_supabase_token/);
+  assert.match(auth, /ql_supabase_refresh_token/);
+  assert.match(auth, /\/auth\/refresh/);
+  assert.match(backend, /QL_BACKEND_ENABLED = true/);
+  assert.match(backend, /ql_supabase_refresh_token/);
+  assert.match(backend, /\/auth\/refresh/);
+  assert.match(backend, /\/orders\/mine/);
+  assert.match(backend, /\/orders\/queue/);
+  assert.match(backend, /\/menu/);
+  assert.doesNotMatch(auth, /supabase\.co|publishable|anon key/i);
+  assert.doesNotMatch(read('login.html'), /@supabase\/supabase-js|qlMongoAuth/);
+  assert.doesNotMatch(read('register.html'), /@supabase\/supabase-js|qlMongoAuth/);
+  assert.match(read('student/change-password.html'), /updatePassword\(current,n\)/);
+});
+
+test('inline JavaScript in auth and staff-access pages parses', () => {
+  for (const file of ['login.html', 'register.html', 'admin/staff-access.html']) {
+    const html = read(file);
+    const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
+      .map(match => match[1])
+      .filter(source => source.trim());
+    for (const [index, source] of scripts.entries()) {
+      assert.doesNotThrow(() => new vm.Script(source, { filename: `${file} inline script ${index + 1}` }));
+    }
+  }
+});
+
+test('the Supabase menu seed and four counters are present', () => {
+  const seed = read('supabase/seed.sql');
+  assert.match(seed, /insert into public\.ql_menu_items/);
+  for (const id of ['C1', 'C2', 'C3', 'C4']) {
+    assert.match(read('js/data.js'), new RegExp(id + ': \\{'));
+  }
+});
+
+test('order API sends client quantities but leaves prices and capacity to Postgres', () => {
+  assert.match(server, /menuItemId: String\(item\.id \|\| item\.menuItemId \|\| ''\)/);
+  assert.match(server, /p_items: items/);
+  assert.doesNotMatch(server, /total\s*=\s*items\.reduce/);
+  assert.match(coreMigration, /v_total := v_total \+ v_menu\.price\*v_qty/);
 });

@@ -1,18 +1,7 @@
 {
-  "name": "queueless-mongodb-demo",
-  "version": "1.0.0",
+  "name": "queueless-server",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
-  },
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "dotenv": "^16.4.7",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.12.1",
-    "nodemailer": "^6.10.0"
-  }
+  "description": "ES module settings for the root Express + Supabase server"
 }

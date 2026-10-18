@@ -64,7 +64,7 @@
               <label class="counter-option"><input type="radio" name="counter" value="C4"> <strong>Counter 4</strong> · Main Canteen · Meals &amp; Everything Else</label>
             </div>
           </div>
-          <div class="demo-note">Student accounts can sign up here. Staff and Admin access must be granted by an administrator; selecting those roles here will not grant privileges.</div>
+          <div class="demo-note">Every new account starts as a Student. You may request Staff or Admin access, but only an administrator can grant it.</div>
           <p id="auth-message" role="status" style="display:none;margin:0 0 12px;font-size:13px;color:var(--crimson-dark)"></p>
           <button type="submit" class="btn btn-amber btn-block" id="register-btn">Create Account <i data-lucide="arrow-right"></i></button>
         </form>
@@ -95,8 +95,7 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/data.js"></script><script src="js/mongo-auth.js"></script>
+<script src="js/data.js"></script><script src="js/supabase-auth.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 <script>
@@ -122,15 +121,15 @@
     e.preventDefault();
     const name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim(),password=document.getElementById('password').value,rollNumber=document.getElementById('roll').value.trim();
     const role=document.querySelector('input[name="role"]:checked').value;
-    if(role!=='student'){showMsg('auth-message','Staff and Admin accounts cannot self-assign privileged roles. The configured admin email receives Admin access automatically.');return;}
     if(!/^[^\s@]+@somaiya\.edu$/i.test(email)){showMsg('auth-message','Use your college email ending in @somaiya.edu.');return;}
     if(password.length<8||!/[A-Z]/.test(password)||!/[^A-Za-z0-9\s]/.test(password)){showMsg('auth-message','Use at least 8 characters, including one uppercase letter and one special character.');return;}
     _regPassword=password;
     const btn=document.getElementById('register-btn');btn.disabled=true;btn.textContent='Creating account…';
     try{
-      const result=await window.qlMongoAuth.signUp({name,email,password,rollNumber});
-      showOtpStep(email);
-      if(result.devOtp){const el=document.getElementById('otp-message');el.textContent=`Dev mode — OTP: ${result.devOtp}`;el.style.display='block';el.style.color='#237547';}
+      const requestedCounter=role==='staff'?document.querySelector('input[name="counter"]:checked')?.value:null;
+      const result=await window.qlAuth.signUp({name,email,password,rollNumber,requestedRole:role,requestedCounter});
+      if(result.verificationRequired)showOtpStep(email);
+      else{const user=await window.qlAuth.signIn(email,password);window.location.href=qlRoleHome(user.role);}
     } catch(err){showMsg('auth-message',err.message||'Could not create account.');btn.disabled=false;btn.textContent='Create Account';}
   });
 
@@ -138,9 +137,9 @@
     const otp=getOtp();if(otp.length<6){showMsg('otp-message','Enter all 6 digits.');return;}
     const btn=document.getElementById('otp-verify-btn');btn.disabled=true;btn.textContent='Verifying…';document.getElementById('otp-message').style.display='none';
     try{
-      await window.qlMongoAuth.verifyOtp(_regEmail,otp);
+      await window.qlAuth.verifyOtp(_regEmail,otp);
       showMsg('otp-message','Verified! Logging you in…',true);
-      try{const user=await window.qlMongoAuth.signIn(_regEmail,_regPassword);window.location.href=qlRoleHome(user.role);}
+      try{const user=await window.qlAuth.signIn(_regEmail,_regPassword);window.location.href=qlRoleHome(user.role);}
       catch{window.location.href='login.html?verified=1';}
     } catch(err){
       showMsg('otp-message',err.message||'Incorrect code. Try again.');
@@ -152,7 +151,7 @@
 
   document.getElementById('resend-otp-btn').addEventListener('click',async()=>{
     const btn=document.getElementById('resend-otp-btn');btn.disabled=true;btn.textContent='Sending…';
-    try{const res=await window.qlMongoAuth.resendOtp(_regEmail);otpBoxes.forEach(b=>b.value='');otpBoxes[0].focus();showMsg('otp-message',res.devOtp?`Dev mode — new OTP: ${res.devOtp}`:'New code sent!',true);}
+    try{const res=await window.qlAuth.resendOtp(_regEmail);otpBoxes.forEach(b=>b.value='');otpBoxes[0].focus();showMsg('otp-message',res.message||'New code sent!',true);}
     catch(err){showMsg('otp-message',err.message||'Could not resend.');}
     finally{btn.disabled=false;btn.textContent='Resend code';}
   });
