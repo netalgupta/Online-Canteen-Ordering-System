@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /student/
+Disallow: /staff/
+Disallow: /admin/
+Disallow: /login.html
+Disallow: /register.html
+# Add a Sitemap: directive after deployment on the final canonical domain.

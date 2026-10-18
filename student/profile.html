@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Profile — QueueLess</title><link rel="stylesheet" href="../css/style.css"><script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+.profile-wrap{max-width:760px;margin:0 auto;padding:24px 0 70px}.profile-head{text-align:center;margin:18px 0 24px}.profile-avatar{width:76px;height:76px;border-radius:50%;background:var(--crimson);color:#fff;display:flex;align-items:center;justify-content:center;font-size:25px;font-weight:700;margin:0 auto 12px}.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}.profile-order{border:1px solid var(--line);border-radius:16px;padding:15px;background:#fff}.profile-order + .profile-order{margin-top:10px}.profile-order-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.profile-order-meta{font-size:12px;color:var(--ink-soft);margin-top:5px}.profile-actions{display:flex;gap:8px;margin-top:12px}.profile-actions .btn{flex:1}.settings-list{display:flex;flex-direction:column}.setting-link{display:flex;align-items:center;gap:13px;padding:15px 4px;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}.setting-link:last-child{border-bottom:0}.setting-icon{width:36px;height:36px;border-radius:11px;background:var(--crimson-tint);color:var(--crimson);display:grid;place-items:center;flex:0 0 36px}.setting-link svg{width:18px;height:18px}.setting-copy{flex:1}.setting-copy strong{display:block;font-size:14px}.setting-copy span{display:block;color:var(--ink-soft);font-size:12px;margin-top:2px}.setting-arrow{color:var(--ink-faint)}.section-title{font-size:16px;margin:0 0 12px}.orders-section{margin:22px 0}.order-empty{padding:22px;text-align:center;border:1px dashed var(--line-strong);border-radius:14px;color:var(--ink-soft);font-size:13px;background:var(--near-white)}
+@media(max-width:600px){.profile-wrap{padding:12px 0 60px}.profile-grid{grid-template-columns:1fr}.profile-order-head{align-items:flex-start}}
+</style></head>
+<body>
+<nav class="topnav"><div class="topnav-inner"><a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a><div class="nav-links" id="profile-nav"></div><div class="nav-right"><a href="dashboard.html" class="avatar" id="nav-avatar">A</a></div></div></nav>
+<div class="container profile-wrap">
+  <div class="page-exit-row"><a href="dashboard.html" class="page-back" id="profile-back"><i data-lucide="arrow-left"></i> Back to home</a></div>
+  <div class="profile-head"><div class="profile-avatar" id="pf-avatar">A</div><h1 style="font-size:22px" id="pf-name">Student</h1><p class="muted text-sm" id="pf-email">—</p><span class="role-badge" id="pf-role" style="display:inline-block;margin-top:8px">Student</span></div>
+
+  <div class="profile-grid">
+    <div class="card card-pad">
+      <h3 style="font-size:15px;margin-bottom:12px">Account</h3>
+      <div class="settings-list">
+        <a class="setting-link" href="edit-profile.html"><span class="setting-icon"><i data-lucide="user-pen"></i></span><span class="setting-copy"><strong>Edit Profile</strong><span>Update your name, email and phone</span></span><i class="setting-arrow" data-lucide="chevron-right"></i></a>
+        <a class="setting-link" href="history.html"><span class="setting-icon"><i data-lucide="receipt-text"></i></span><span class="setting-copy"><strong>View Orders</strong><span>See your active and past orders</span></span><i class="setting-arrow" data-lucide="chevron-right"></i></a>
+        <a class="setting-link" href="change-password.html"><span class="setting-icon"><i data-lucide="lock-keyhole"></i></span><span class="setting-copy"><strong>Change Password</strong><span>Update your account password</span></span><i class="setting-arrow" data-lucide="chevron-right"></i></a>
+        <a class="setting-link" href="notifications.html"><span class="setting-icon"><i data-lucide="bell"></i></span><span class="setting-copy"><strong>Notifications</strong><span>Manage order and reminder alerts</span></span><i class="setting-arrow" data-lucide="chevron-right"></i></a>
+      </div>
+    </div>
+    <div class="card card-pad">
+      <h3 style="font-size:15px;margin-bottom:5px">Help & Support</h3>
+      <div class="settings-list">
+        <a class="setting-link" href="help.html"><span class="setting-icon"><i data-lucide="circle-help"></i></span><span class="setting-copy"><strong>Help & FAQ</strong><span>Find answers to common questions</span></span><i class="setting-arrow" data-lucide="chevron-right"></i></a>
+        <a class="setting-link" href="support.html"><span class="setting-icon"><i data-lucide="life-buoy"></i></span><span class="setting-copy"><strong>Support</strong><span>Get help with an order or account</span></span><i class="setting-arrow" data-lucide="chevron-right"></i></a>
+        <a class="setting-link" href="contact.html"><span class="setting-icon"><i data-lucide="mail"></i></span><span class="setting-copy"><strong>Contact Us</strong><span>Reach the Siddhi Services team</span></span><i class="setting-arrow" data-lucide="chevron-right"></i></a>
+        <a class="setting-link" href="report.html"><span class="setting-icon"><i data-lucide="flag"></i></span><span class="setting-copy"><strong>Report a Problem</strong><span>Tell us when something isn't working</span></span><i class="setting-arrow" data-lucide="chevron-right"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-pad"><h3 style="font-size:15px;margin-bottom:5px">Legal & About</h3><div class="settings-list"><a class="setting-link" href="terms.html"><span class="setting-icon"><i data-lucide="file-text"></i></span><span class="setting-copy"><strong>Terms of Service</strong><span>Usage terms for QueueLess</span></span><i class="setting-arrow" data-lucide="chevron-right"></i></a><a class="setting-link" href="privacy.html"><span class="setting-icon"><i data-lucide="shield"></i></span><span class="setting-copy"><strong>Privacy Policy</strong><span>How account information is handled</span></span><i class="setting-arrow" data-lucide="chevron-right"></i></a><div class="setting-link"><span class="setting-icon"><i data-lucide="info"></i></span><span class="setting-copy"><strong>App Version</strong><span>QueueLess v23.0 · Siddhi Services Canteen</span></span></div></div></div>
+  <a href="#" class="btn btn-outline btn-block mt-16" id="logout-btn">Log Out</a>
+</div>
+<script src="../js/auth.js"></script><script src="../js/data.js"></script><script src="../js/backend.js"></script><script src="../js/orders.js"></script><script>if(!qlRequireAuth()){throw new Error('Unauthorized');}</script><script src="../js/app.js"></script>
+<script>
+const user=qlGetUser(),role=user.role||'student',roleHome=role==='admin'?'../admin/dashboard.html':role==='staff'?'../staff/dashboard.html':'dashboard.html';const nav=document.getElementById('profile-nav');
+if(role==='student')nav.innerHTML='<a href="dashboard.html">Home</a><a href="menu.html">Menu</a><a href="history.html">Orders</a><a href="profile.html" class="active">Profile</a>';else nav.innerHTML=`<a href="${roleHome}">Workspace</a><a href="profile.html" class="active">Profile</a>`;
+document.getElementById('profile-back').href=roleHome;document.getElementById('profile-back').lastChild.textContent=role==='student'?' Back to home':' Back to workspace';
+document.getElementById('nav-avatar').textContent=(user.name||'S').charAt(0).toUpperCase();document.getElementById('pf-name').textContent=user.name||'Student';document.getElementById('pf-email').textContent=user.email||'—';document.getElementById('pf-role').textContent=(role.charAt(0).toUpperCase()+role.slice(1));document.getElementById('pf-avatar').textContent=(user.name||'S').charAt(0).toUpperCase();
+document.getElementById('logout-btn').onclick=e=>{e.preventDefault();qlLogout()};
+</script></body></html>

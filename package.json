@@ -1,11 +1,8 @@
-﻿{
-  "name": "canteen-system",
-  "version": "1.0.0",
-  "scripts": {
-    "dev": "concurrently --kill-others-on-fail --prefix-colors \"cyan,magenta\" --prefix \"[{name}]\" --names \"SERVER,CLIENT\" \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
-    "install:all": "npm install && npm install --prefix server && npm install --prefix client"
-  },
-  "devDependencies": {
-    "concurrently": "^9.0.0"
-  }
+{
+  "name": "queueless-canteen-mongodb-demo",
+  "version": "1.1.0",
+  "private": true,
+  "description": "QueueLess full-stack college project using Express, bcryptjs, JWT and MongoDB Atlas",
+  "scripts": {"start": "node server/server.js", "dev": "node --watch server/server.js", "test": "node --test tests/*.test.js", "check:js": "node --check js/backend.js && node --check js/auth.js && node --check js/orders.js && node --check js/data.js && node --check server/server.js && node --check js/backend.js"},
+  "dependencies": {"bcryptjs": "^2.4.3", "dotenv": "^16.4.7", "express": "^5.1.0", "jsonwebtoken": "^9.0.2", "mongoose": "^8.12.1", "nodemailer": "^6.10.0"}
 }
