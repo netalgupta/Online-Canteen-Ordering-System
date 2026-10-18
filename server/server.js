@@ -553,6 +553,8 @@ app.patch('/api/orders/:orderId/items/:itemId/status', roles('staff', 'admin'), 
   res.json({ ok: true });
 }, 'Could not update order status.'));
 
+app.get('/login', (_req, res) => res.redirect(302, '/login.html'));
+app.get('/register', (_req, res) => res.redirect(302, '/register.html'));
 app.use(express.static(path.resolve(__dirname, '..')));
 
 app.listen(port, () => {

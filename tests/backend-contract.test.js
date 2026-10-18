@@ -105,6 +105,11 @@ test('browser pages use the same-origin API adapter without a hard-coded Supabas
   assert.match(read('student/change-password.html'), /updatePassword\(current,n\)/);
 });
 
+test('clean login and registration URLs redirect to their static pages', () => {
+  assert.match(server, /app\.get\('\/login', \(_req, res\) => res\.redirect\(302, '\/login\.html'\)\)/);
+  assert.match(server, /app\.get\('\/register', \(_req, res\) => res\.redirect\(302, '\/register\.html'\)\)/);
+});
+
 test('inline JavaScript in auth and staff-access pages parses', () => {
   for (const file of ['login.html', 'register.html', 'admin/staff-access.html']) {
     const html = read(file);
