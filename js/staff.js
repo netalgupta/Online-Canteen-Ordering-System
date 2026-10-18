@@ -1,17 +1,73 @@
-/* QueueLess — staff dashboard with counter routing + pickup-slot priority */
+/* QueueLess — staff dashboard with counter routing + pickup-slot priority.
+   Uses QL_STAFF_QUEUE (loaded from /api/orders/queue) so staff can see
+   ALL student orders routed to their counter, not only their own orders. */
+
 const QL_ACTION_LABEL={received:{next:'accepted',label:'Accept'},accepted:{next:'preparing',label:'Start Preparing'},preparing:{next:'ready',label:'Mark Ready'},ready:{next:'collected',label:'Mark Collected'}};
+
+/** Return the QL_STAFF_QUEUE if available, otherwise fall back to localStorage. */
+function qlStaffOrders(){
+  return window.QL_STAFF_QUEUE || qlGetOrders();
+}
+
 function qlStaffCounter(){const user=qlGetUser()||{};const preview=new URLSearchParams(window.location.search).get('counter');return qlGetCounter(preview||user.counterId||'C4');}
+
 function qlStaffTracks(){
   const counter=qlStaffCounter();
-  return qlGetOrders().flatMap(o=>(o.itemTracks||[]).filter(t=>t.status!=='collected').map(t=>({o,t}))).filter(x=>{
+  return qlStaffOrders().flatMap(o=>(o.itemTracks||[]).filter(t=>t.status!=='collected').map(t=>({o,t}))).filter(x=>{
     const c=x.t.counterId || qlGetItemCounter(qlGetMenu().find(m=>m.id===x.t.id)).id;
     return c===counter.id;
   });
 }
+
 function qlTrackSort(a,b){return qlPriorityMs(a)-qlPriorityMs(b)||a.createdAt-b.createdAt;}
-function qlTrackCardHTML(order,track){const menu=qlGetMenu();const m=menu.find(x=>x.id===track.id);const action=QL_ACTION_LABEL[track.status];const pos=qlQueuePosition(order.id,track.trackId);const counter=qlGetCounter(track.counterId||qlGetItemCounter(m).id);return `<div class="order-card priority-${track.status}" data-id="${order.id}" data-track="${track.trackId}"><div class="order-card-head"><span class="order-card-id">#${order.id}</span><span class="pill pill-muted">${pos} ahead</span></div><div class="order-card-items"><strong>${m?m.name:'Item'}</strong> × ${track.qty}</div><div class="order-card-meta"><span>${order.studentName}</span><span>Pickup ${order.pickupDateLabel||''} ${order.pickupTime}</span></div><div class="counter-chip">${counter.short}</div>${track.instructions?`<div class="order-card-note">Note: ${track.instructions}</div>`:''}${action?`<button class="btn btn-amber btn-sm btn-block advance-track-btn" data-id="${order.id}" data-track="${track.trackId}" data-next="${action.next}">${action.label}</button>`:''}</div>`;}
-function qlRenderKanban(){const tracks=qlStaffTracks();tracks.sort((a,b)=>qlTrackSort({...a.t,createdAt:a.o.createdAt},{...b.t,createdAt:b.o.createdAt}));const cols={received:tracks.filter(x=>x.t.status==='received'),inprogress:tracks.filter(x=>['accepted','preparing'].includes(x.t.status)),ready:tracks.filter(x=>x.t.status==='ready')};
- const nc=document.getElementById('col-new'),pc=document.getElementById('col-preparing'),rc=document.getElementById('col-ready');document.getElementById('count-new').textContent=cols.received.length;document.getElementById('count-preparing').textContent=cols.inprogress.length;document.getElementById('count-ready').textContent=cols.ready.length;
- nc.innerHTML=cols.received.length?cols.received.map(x=>qlTrackCardHTML(x.o,x.t)).join(''):`<p class="text-sm muted" style="padding:10px;">No new items for this counter</p>`;pc.innerHTML=cols.inprogress.length?cols.inprogress.map(x=>qlTrackCardHTML(x.o,x.t)).join(''):`<p class="text-sm muted" style="padding:10px;">Nothing in progress</p>`;rc.innerHTML=cols.ready.length?cols.ready.map(x=>qlTrackCardHTML(x.o,x.t)).join(''):`<p class="text-sm muted" style="padding:10px;">Nothing ready</p>`;
- document.querySelectorAll('.advance-track-btn').forEach(btn=>btn.addEventListener('click',async()=>{btn.disabled=true;try{const r=await qlAdvanceTrack(btn.dataset.id,btn.dataset.track,btn.dataset.next);if(r)qlToast(`${r.track.trackId.replace(/.*-T/, 'Item ')} → ${QL_STATUS_LABEL[btn.dataset.next]}`);}catch(e){console.error(e);qlToast('Could not update item status. Check your staff permissions.');}finally{qlRenderKanban();qlRenderStats();}}));qlIcons();}
-function qlRenderStats(){const staffCounter=qlStaffCounter();const tracks=qlStaffTracks().map(x=>x.t);const pending=tracks.filter(t=>t.status==='received').length,preparing=tracks.filter(t=>['accepted','preparing'].includes(t.status)).length,ready=tracks.filter(t=>t.status==='ready').length,completed=qlGetOrders().flatMap(o=>o.itemTracks||[]).filter(t=>t.status==='collected' && (t.counterId||qlGetItemCounter(qlGetMenu().find(m=>m.id===t.id)).id)===qlStaffCounter().id).length;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};set('stat-pending',pending);set('stat-preparing',preparing);set('stat-ready',ready);set('stat-completed',completed);const w=qlCounterWorkload(staffCounter.id),we=document.getElementById('workload-pct');if(we){we.textContent=w.pct+'%';document.getElementById('workload-fill').style.width=w.pct+'%';document.getElementById('workload-label').textContent=w.pct>=65?'High Demand':'Normal';document.getElementById('workload-active').textContent=tracks.length;}}
+
+function qlTrackCardHTML(order,track){
+  const menu=qlGetMenu();
+  const m=menu.find(x=>x.id===track.id);
+  const action=QL_ACTION_LABEL[track.status];
+  const pos=qlQueuePosition(order.id,track.trackId);
+  const counter=qlGetCounter(track.counterId||qlGetItemCounter(m).id);
+  return `<div class="order-card priority-${track.status}" data-id="${order.id}" data-track="${track.trackId}">
+<div class="order-card-head"><span class="order-card-id">#${order.token||order.id}</span><span class="pill pill-muted">${pos} ahead</span></div>
+<div class="order-card-items"><strong>${m?m.name:'Item'}</strong> × ${track.qty}</div>
+<div class="order-card-meta"><span>${order.studentName||'Student'}</span><span>Pickup ${order.pickupDateLabel||''} ${order.pickupTime||''}</span></div>
+<div class="counter-chip">${counter.short}</div>
+${track.instructions?`<div class="order-card-note">Note: ${track.instructions}</div>`:''}
+${action?`<button class="btn btn-amber btn-sm btn-block advance-track-btn" data-id="${order.id}" data-track="${track.trackId}" data-next="${action.next}">${action.label}</button>`:''}
+</div>`;
+}
+
+function qlRenderKanban(){
+  const tracks=qlStaffTracks();
+  tracks.sort((a,b)=>qlTrackSort({...a.t,createdAt:a.o.createdAt},{...b.t,createdAt:b.o.createdAt}));
+  const cols={received:tracks.filter(x=>x.t.status==='received'),inprogress:tracks.filter(x=>['accepted','preparing'].includes(x.t.status)),ready:tracks.filter(x=>x.t.status==='ready')};
+  const nc=document.getElementById('col-new'),pc=document.getElementById('col-preparing'),rc=document.getElementById('col-ready');
+  document.getElementById('count-new').textContent=cols.received.length;
+  document.getElementById('count-preparing').textContent=cols.inprogress.length;
+  document.getElementById('count-ready').textContent=cols.ready.length;
+  nc.innerHTML=cols.received.length?cols.received.map(x=>qlTrackCardHTML(x.o,x.t)).join(''):`<p class="text-sm muted" style="padding:10px;">No new items for this counter</p>`;
+  pc.innerHTML=cols.inprogress.length?cols.inprogress.map(x=>qlTrackCardHTML(x.o,x.t)).join(''):`<p class="text-sm muted" style="padding:10px;">Nothing in progress</p>`;
+  rc.innerHTML=cols.ready.length?cols.ready.map(x=>qlTrackCardHTML(x.o,x.t)).join(''):`<p class="text-sm muted" style="padding:10px;">Nothing ready</p>`;
+  document.querySelectorAll('.advance-track-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+    btn.disabled=true;
+    try{
+      const r=await qlAdvanceTrack(btn.dataset.id,btn.dataset.track,btn.dataset.next);
+      if(r) qlToast(`Item → ${QL_STATUS_LABEL[btn.dataset.next]||btn.dataset.next}`);
+    }catch(e){console.error(e);qlToast('Could not update item status. Check your staff permissions.');}
+    finally{qlRenderKanban();qlRenderStats();}
+  }));
+  qlIcons();
+}
+
+function qlRenderStats(){
+  const staffCounter=qlStaffCounter();
+  const tracks=qlStaffTracks().map(x=>x.t);
+  const pending=tracks.filter(t=>t.status==='received').length;
+  const preparing=tracks.filter(t=>['accepted','preparing'].includes(t.status)).length;
+  const ready=tracks.filter(t=>t.status==='ready').length;
+  const completed=qlStaffOrders().flatMap(o=>o.itemTracks||[]).filter(t=>t.status==='collected'&&(t.counterId||qlGetItemCounter(qlGetMenu().find(m=>m.id===t.id)).id)===staffCounter.id).length;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('stat-pending',pending);set('stat-preparing',preparing);set('stat-ready',ready);set('stat-completed',completed);
+  const w=qlCounterWorkload(staffCounter.id),we=document.getElementById('workload-pct');
+  if(we){we.textContent=w.pct+'%';document.getElementById('workload-fill').style.width=w.pct+'%';document.getElementById('workload-label').textContent=w.pct>=65?'High Demand':'Normal';document.getElementById('workload-active').textContent=tracks.length;}
+}

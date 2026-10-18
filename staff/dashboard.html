@@ -100,7 +100,14 @@
 <script>
   qlRenderKanban();
   qlRenderStats();
-  setInterval(()=>{ qlRenderKanban(); qlRenderStats(); }, 4000);
+  // Poll the server queue every 4 s so student orders appear without a page refresh
+  setInterval(async ()=>{
+    if(window.qlBackend && typeof window.qlBackend.refreshStaffQueue === 'function'){
+      await window.qlBackend.refreshStaffQueue().catch(()=>{});
+    }
+    qlRenderKanban();
+    qlRenderStats();
+  }, 4000);
 </script>
 </body>
 </html>

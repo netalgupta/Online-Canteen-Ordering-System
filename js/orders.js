@@ -35,7 +35,25 @@ async function qlCreateOrder({items,pickupTime,pickupDate,pickupDateLabel,paymen
  const orders=qlGetOrders();orders.push(order);qlSaveOrders(orders);return order;
 }
 function qlRecomputeOrderStatus(o){const ts=(o.itemTracks||[]).map(t=>t.status);o.status=ts.every(s=>s==='collected')?'collected':ts.some(s=>s==='ready')?'ready':ts.some(s=>s==='preparing')?'preparing':ts.some(s=>s==='accepted')?'accepted':'received';}
-async function qlAdvanceTrack(orderId,trackId,newStatus){const orders=qlGetOrders(),o=orders.find(x=>x.id===orderId);if(!o)return null;const t=(o.itemTracks||[]).find(x=>x.trackId===trackId);if(!t)return null;if(window.QL_BACKEND_ENABLED&&window.qlBackend){await window.qlBackend.updateItemStatus(trackId,newStatus);const refreshed=qlGetOrders().find(x=>x.id===orderId);const remoteTrack=refreshed?.itemTracks?.find(x=>x.trackId===trackId);if(refreshed&&remoteTrack){return {order:refreshed,track:remoteTrack};}}t.status=newStatus;t.history.push({status:newStatus,at:Date.now()});if(newStatus==='ready'){t.notified=false;qlNotifyItemReady(o,t);}qlRecomputeOrderStatus(o);o.history.push({status:o.status,at:Date.now()});qlSaveOrders(orders);return {order:o,track:t};}
+async function qlAdvanceTrack(orderId,trackId,newStatus){
+  const orders=qlGetOrders();
+  let o=orders.find(x=>x.id===orderId);
+  // For staff: order may be in the server queue, not in student's localStorage
+  if(!o && window.QL_STAFF_QUEUE) o=window.QL_STAFF_QUEUE.find(x=>x.id===orderId);
+  if(!o)return null;
+  const t=(o.itemTracks||[]).find(x=>x.trackId===trackId);if(!t)return null;
+  if(window.QL_BACKEND_ENABLED&&window.qlBackend){
+    await window.qlBackend.updateItemStatus(trackId,newStatus);
+    // After update, re-read from the refreshed staff queue
+    const refreshed=(window.QL_STAFF_QUEUE||[]).find(x=>x.id===orderId);
+    const remoteTrack=refreshed?.itemTracks?.find(x=>x.trackId===trackId);
+    if(refreshed&&remoteTrack){return {order:refreshed,track:remoteTrack};}
+  }
+  t.status=newStatus;t.history.push({status:newStatus,at:Date.now()});
+  if(newStatus==='ready'){t.notified=false;qlNotifyItemReady(o,t);}
+  qlRecomputeOrderStatus(o);o.history.push({status:o.status,at:Date.now()});
+  qlSaveOrders(orders);return {order:o,track:t};
+}
 function qlAdvanceOrder(orderId,newStatus){const o=qlGetOrder(orderId);if(!o)return null;if(o.itemTracks?.length){o.itemTracks.forEach(t=>{if(t.status!=='collected')t.status=newStatus;t.history.push({status:newStatus,at:Date.now()});});qlRecomputeOrderStatus(o);qlSaveOrders(qlGetOrders());return o;}const orders=qlGetOrders();const x=orders.find(y=>y.id===orderId);if(!x)return null;x.status=newStatus;x.history.push({status:newStatus,at:Date.now()});qlSaveOrders(orders);return x;}
 function qlGetOrder(id){return qlGetOrders().find(o=>o.id===id)||null;}
 function qlGetTrack(orderId,trackId){const o=qlGetOrder(orderId);return o&&o.itemTracks?o.itemTracks.find(t=>t.trackId===trackId):null;}
