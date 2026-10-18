@@ -7,7 +7,8 @@ This version keeps the existing HTML/CSS/vanilla-JavaScript UI and connects it t
 - Express server and REST API
 - MongoDB/Mongoose models for users, menu items, and orders
 - bcrypt password hashing and JWT authentication
-- Email verification using SMTP (or a local-only verification link when SMTP is not configured)
+- 6-digit email OTP verification using SMTP (a development-only code is returned when SMTP is not configured)
+- Somaiya-only email accounts and password validation (8+ characters, uppercase, special character)
 - Server-side role checks for student, staff, and admin endpoints
 - Admin email allowlist, supporting comma-separated addresses in `ADMIN_EMAILS`
 - Automatic first-run import of the 159 menu seed records into the `queueless_demo` database, only if the menu collection is empty
@@ -31,7 +32,7 @@ Copy `server/.env.example` to `server/.env`, then edit `server/.env`:
 - `MONGODB_URI`: your Atlas connection string
 - `MONGODB_DB=queueless_demo`
 - `JWT_SECRET`: replace with a long random value of at least 32 characters
-- `ADMIN_EMAILS=aryamenon1330@gmail.com` (add more addresses separated by commas if needed)
+- `ADMIN_EMAILS=your.name@somaiya.edu` (add trusted Somaiya addresses separated by commas; the default is empty)
 - `APP_BASE_URL=http://localhost:3000`
 - Optional SMTP settings for real verification emails: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `MAIL_FROM`
 
@@ -54,7 +55,7 @@ npm test
 
 ## Authentication and email redirects
 
-Registration always creates a Student account unless the email is in the server-side `ADMIN_EMAILS` allowlist. Users cannot grant themselves Staff or Admin access from the registration form. After verifying email, the link redirects to `APP_BASE_URL/login.html?verified=1`, which avoids redirecting to an unrelated localhost port. For actual emails, configure SMTP; otherwise the server returns a local-only verification link for the project demo.
+Registration accepts only `@somaiya.edu` addresses and requires passwords of at least eight characters with one uppercase and one special character. Password changes enforce the same policy. Registration always creates a Student account unless the email is in the server-side `ADMIN_EMAILS` allowlist; the configured admin addresses must also use `@somaiya.edu`. Users cannot grant themselves Staff or Admin access from the registration form. Email is verified with a 6-digit OTP. OTP endpoints are rate-limited and OTP comparisons are constant-time. Configure SMTP for real verification emails; production startup refuses to run without SMTP, while local development can use the returned development OTP.
 
 ## Current scope and limitations
 

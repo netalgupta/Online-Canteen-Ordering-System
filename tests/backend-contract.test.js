@@ -13,7 +13,8 @@ test('MongoDB backend dependencies and root npm start are configured', () => {
 test('configured admin email is server-side and multiple emails are supported', () => {
   const s = read('server/server.js');
   assert.match(s, /ADMIN_EMAILS.*split\(','\)/);
-  assert.match(read('server/.env.example'), /aryamenon1330@gmail\.com/);
+  assert.match(s, /process\.env\.ADMIN_EMAILS \|\| ''/);
+  assert.match(read('server/.env.example'), /ADMIN_EMAILS=your\.name@somaiya\.edu/);
   assert.match(s, /ADMIN_EMAILS\.has\(email\)\?'admin':'student'/);
 });
 test('passwords are hashed and JWTs are verified server-side', () => {
@@ -39,8 +40,36 @@ test('registration does not let users self-assign staff/admin roles', () => {
   assert.match(read('register.html'), /role!=='student'/);
   assert.match(read('server/server.js'), /const role=ADMIN_EMAILS\.has\(email\)\?'admin':'student'/);
 });
+test('auth policy restricts accounts to Somaiya emails and requires strong passwords', async () => {
+  const { getPasswordPolicyError, isSomaiyaEmail } = await import('../server/src/utils/authValidation.js');
+  assert.equal(isSomaiyaEmail('student@somaiya.edu'), true);
+  assert.equal(isSomaiyaEmail('STUDENT@SOMAIYA.EDU'), true);
+  assert.equal(isSomaiyaEmail('student@sub.somaiya.edu'), false);
+  assert.equal(isSomaiyaEmail('student@example.com'), false);
+  assert.equal(getPasswordPolicyError('Campus!2026'), null);
+  assert.match(getPasswordPolicyError('campus!2026'), /uppercase/i);
+  assert.match(getPasswordPolicyError('Campus2026'), /special character/i);
+  assert.match(getPasswordPolicyError('Short!A'), /8 characters/i);
+});
+test('server auth routes enforce the email and password rules', () => {
+  const server = read('server/server.js');
+  assert.match(server, /if\(!isSomaiyaEmail\(email\)\)/);
+  assert.match(server, /getPasswordPolicyError\(password\)/);
+  assert.match(server, /getPasswordPolicyError\(next,'New password'\)/);
+  assert.match(read('register.html'), /somaiya\\\.edu/);
+  assert.match(read('login.html'), /somaiya\\\.edu/);
+  assert.match(read('student/change-password.html'), /updatePassword\(current,n\)/);
+});
+test('OTP endpoints are rate-limited and OTP hashes are compared in constant time', () => {
+  const server = read('server/server.js');
+  assert.match(server, /from 'express-rate-limit'/);
+  assert.match(server, /\/api\/auth\/verify-otp',otpLimiter/);
+  assert.match(server, /\/api\/auth\/resend-otp',resendOtpLimiter/);
+  assert.match(server, /timingSafeEqual/);
+  assert.match(server, /NODE_ENV==='production'&&!emailTransport/);
+});
 test('email verification redirects back to the served app rather than an external localhost port', () => {
-  assert.match(read('server/server.js'), /APP_BASE_URL.*login\.html\?verified=1/);
+  assert.match(read('server/server.js'), /OTP-based email verification/);
   assert.match(read('server/.env.example'), /APP_BASE_URL=http:\/\/localhost:3000/);
 });
 test('four counter categories are preserved', () => {

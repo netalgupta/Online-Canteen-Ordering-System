@@ -44,9 +44,9 @@
         <p class="sub">Choose a role and enter the matching QueueLess workspace.</p>
         <form id="register-form">
           <div class="field"><label>Full name</label><input type="text" id="name" placeholder="Arya Sharma" required></div>
-          <div class="field"><label>College email</label><input type="email" id="email" placeholder="arya@somaiya.edu" required autocomplete="email"></div>
+          <div class="field"><label>College email</label><input type="email" id="email" placeholder="arya@somaiya.edu" pattern="[^@\s]+@somaiya\.edu" title="Use your college email ending in @somaiya.edu." required autocomplete="email"></div>
           <div class="field"><label>Roll number</label><input type="text" id="roll" placeholder="e.g. 21CSB045"></div>
-          <div class="field"><label>Password</label><input type="password" id="password" placeholder="••••••••" required autocomplete="new-password"></div>
+          <div class="field"><label>Password</label><input type="password" id="password" placeholder="••••••••" minlength="8" required autocomplete="new-password"><small>At least 8 characters, including one uppercase letter and one special character.</small></div>
           <div class="field" style="margin-bottom:14px;">
             <label>Account type</label>
             <div class="role-grid">
@@ -123,7 +123,8 @@
     const name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim(),password=document.getElementById('password').value,rollNumber=document.getElementById('roll').value.trim();
     const role=document.querySelector('input[name="role"]:checked').value;
     if(role!=='student'){showMsg('auth-message','Staff and Admin accounts cannot self-assign privileged roles. The configured admin email receives Admin access automatically.');return;}
-    if(password.length<8){showMsg('auth-message','Use a password with at least 8 characters.');return;}
+    if(!/^[^\s@]+@somaiya\.edu$/i.test(email)){showMsg('auth-message','Use your college email ending in @somaiya.edu.');return;}
+    if(password.length<8||!/[A-Z]/.test(password)||!/[^A-Za-z0-9\s]/.test(password)){showMsg('auth-message','Use at least 8 characters, including one uppercase letter and one special character.');return;}
     _regPassword=password;
     const btn=document.getElementById('register-btn');btn.disabled=true;btn.textContent='Creating account…';
     try{

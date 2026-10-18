@@ -1,4 +1,6 @@
-# QueueLess backend branch (not hosted)
+# QueueLess Supabase backend design note (not the active server)
+
+> This is a historical Supabase/PostgreSQL design reference. The root `npm start` command on this branch currently runs the Express + MongoDB backend described in `README.md`; this document does not describe that server's runtime configuration.
 
 This branch-ready package keeps the existing HTML/CSS/vanilla-JS frontend and adds a Supabase/PostgreSQL backend foundation. It uses the existing SkipQ Supabase project without dropping or rewriting the existing `orders`, `order_items`, `menu_items`, `counters`, or `token_counter` tables.
 

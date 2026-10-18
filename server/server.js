@@ -4,23 +4,28 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
+import { rateLimit } from 'express-rate-limit';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import nodemailer from 'nodemailer';
 import menuSeed from './seed-menu.json' with { type: 'json' };
+import { getPasswordPolicyError, isSomaiyaEmail } from './src/utils/authValidation.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({path:path.join(__dirname,'.env')});
 const app = express(); app.use(express.json({limit:'1mb'}));
 const PORT = Number(process.env.PORT || 3000);
-const ADMIN_EMAILS = new Set((process.env.ADMIN_EMAILS || 'aryamenon1330@gmail.com').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean));
+const authLimiter = rateLimit({windowMs:15*60*1000,limit:20,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many authentication attempts. Try again later.'}});
+const otpLimiter = rateLimit({windowMs:15*60*1000,limit:8,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many verification attempts. Try again later.'}});
+const resendOtpLimiter = rateLimit({windowMs:60*60*1000,limit:3,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many verification codes requested. Try again later.'}});
+const ADMIN_EMAILS = new Set((process.env.ADMIN_EMAILS || '').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean));
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET || JWT_SECRET.length < 32) { console.error('Set JWT_SECRET to a random secret of at least 32 characters.'); process.exit(1); }
 
 // ─── Schemas ───────────────────────────────────────────────────────────────────
 const userSchema = new mongoose.Schema({
   name:{type:String,required:true,trim:true,maxlength:100},
-  email:{type:String,required:true,unique:true,lowercase:true,trim:true},
+  email:{type:String,required:true,unique:true,lowercase:true,trim:true,match:/^[^\s@]+@somaiya\.edu$/i},
   passwordHash:{type:String,required:true},
   role:{type:String,enum:['student','staff','admin'],default:'student'},
   counterId:{type:String,enum:['C1','C2','C3','C4',null],default:null},
@@ -43,6 +48,7 @@ const emailTransport = process.env.SMTP_HOST ? nodemailer.createTransport({
   secure:process.env.SMTP_SECURE==='true',
   auth:process.env.SMTP_USER?{user:process.env.SMTP_USER,pass:process.env.SMTP_PASS}:undefined
 }) : null;
+if(process.env.NODE_ENV==='production'&&!emailTransport){console.error('Configure SMTP before starting QueueLess in production.');process.exit(1);}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 function safeUser(u){return {id:String(u._id),name:u.name,email:u.email,role:u.role,counterId:u.counterId,verified:u.verified};}
@@ -80,12 +86,13 @@ async function sendOtpEmail(user, otp){
 app.get('/api/health',(_req,res)=>res.json({ok:true,service:'QueueLess MongoDB demo'}));
 
 // ─── Auth: Register ────────────────────────────────────────────────────────────
-app.post('/api/auth/register',async(req,res)=>{
+app.post('/api/auth/register',authLimiter,async(req,res)=>{
   try{
     const name=String(req.body.name||'').trim(),email=String(req.body.email||'').trim().toLowerCase(),password=String(req.body.password||'');
     if(name.length<2||name.length>100)return res.status(400).json({error:'Enter your full name.'});
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter a valid email address.'});
-    if(password.length<8)return res.status(400).json({error:'Password must be at least 8 characters.'});
+    if(!isSomaiyaEmail(email))return res.status(400).json({error:'Use your college email ending in @somaiya.edu.'});
+    const passwordError=getPasswordPolicyError(password);
+    if(passwordError)return res.status(400).json({error:passwordError});
     if(await User.exists({email}))return res.status(409).json({error:'An account already exists for this email.'});
     const role=ADMIN_EMAILS.has(email)?'admin':'student';
     const {otp,hash}=generateOtp();
@@ -103,17 +110,19 @@ app.post('/api/auth/register',async(req,res)=>{
 });
 
 // ─── Auth: Verify OTP ──────────────────────────────────────────────────────────
-app.post('/api/auth/verify-otp',async(req,res)=>{
+app.post('/api/auth/verify-otp',otpLimiter,async(req,res)=>{
   try{
     const email=String(req.body.email||'').trim().toLowerCase();
     const otp=String(req.body.otp||'').trim().replace(/\s/g,'');
-    if(!email||!otp)return res.status(400).json({error:'Email and OTP are required.'});
+    if(!isSomaiyaEmail(email)||!otp)return res.status(400).json({error:'Use your @somaiya.edu email and enter the verification code.'});
     const u=await User.findOne({email,verified:false});
     if(!u)return res.status(404).json({error:'Account not found or already verified.'});
     if(u.otpAttempts>=5)return res.status(429).json({error:'Too many failed attempts. Request a new code.'});
     if(!u.otpHash||!u.otpExpires||u.otpExpires<new Date())return res.status(400).json({error:'Verification code has expired. Request a new one.'});
     const hash=crypto.createHash('sha256').update(otp).digest('hex');
-    if(hash!==u.otpHash){
+    const storedHash=Buffer.from(u.otpHash,'hex');
+    const submittedHash=Buffer.from(hash,'hex');
+    if(storedHash.length!==submittedHash.length||!crypto.timingSafeEqual(storedHash,submittedHash)){
       u.otpAttempts=(u.otpAttempts||0)+1;
       await u.save();
       const left=5-u.otpAttempts;
@@ -129,9 +138,10 @@ app.post('/api/auth/verify-otp',async(req,res)=>{
 });
 
 // ─── Auth: Resend OTP ─────────────────────────────────────────────────────────
-app.post('/api/auth/resend-otp',async(req,res)=>{
+app.post('/api/auth/resend-otp',resendOtpLimiter,async(req,res)=>{
   try{
     const email=String(req.body.email||'').trim().toLowerCase();
+    if(!isSomaiyaEmail(email))return res.status(400).json({error:'Use your college email ending in @somaiya.edu.'});
     const u=await User.findOne({email,verified:false});
     if(u){
       const {otp,hash}=generateOtp();
@@ -147,9 +157,10 @@ app.post('/api/auth/resend-otp',async(req,res)=>{
 });
 
 // ─── Auth: Login ───────────────────────────────────────────────────────────────
-app.post('/api/auth/login',async(req,res)=>{
+app.post('/api/auth/login',authLimiter,async(req,res)=>{
   try{
     const email=String(req.body.email||'').trim().toLowerCase(),password=String(req.body.password||'');
+    if(!isSomaiyaEmail(email))return res.status(400).json({error:'Use your college email ending in @somaiya.edu.'});
     const u=await User.findOne({email});
     if(!u||!(await bcrypt.compare(password,u.passwordHash)))return res.status(401).json({error:'Email or password is incorrect.'});
     if(!u.verified){
@@ -177,14 +188,14 @@ app.post('/api/auth/login',async(req,res)=>{
 app.get('/api/auth/me',auth,async(req,res)=>{const u=await User.findById(req.auth.sub);if(!u)return res.status(401).json({error:'Account not found.'});res.json({user:safeUser(u)});});
 app.post('/api/auth/logout',(_req,res)=>res.json({ok:true}));
 app.patch('/api/auth/profile',auth,async(req,res)=>{try{const u=await User.findById(req.auth.sub);if(!u)return res.status(401).json({error:'Account not found.'});if(req.body.name!==undefined){const name=String(req.body.name).trim();if(name.length<2||name.length>100)return res.status(400).json({error:'Name must be 2–100 characters.'});u.name=name;}await u.save();res.json({user:safeUser(u)});}catch{res.status(500).json({error:'Could not update profile.'});}});
-app.patch('/api/auth/password',auth,async(req,res)=>{try{const u=await User.findById(req.auth.sub);if(!u||!(await bcrypt.compare(String(req.body.currentPassword||''),u.passwordHash)))return res.status(400).json({error:'Current password is incorrect.'});const next=String(req.body.newPassword||'');if(next.length<8)return res.status(400).json({error:'New password must be at least 8 characters.'});u.passwordHash=await bcrypt.hash(next,12);await u.save();res.json({ok:true});}catch{res.status(500).json({error:'Could not change password.'});}});
+app.patch('/api/auth/password',auth,async(req,res)=>{try{const u=await User.findById(req.auth.sub);if(!u||!(await bcrypt.compare(String(req.body.currentPassword||''),u.passwordHash)))return res.status(400).json({error:'Current password is incorrect.'});const next=String(req.body.newPassword||'');const passwordError=getPasswordPolicyError(next,'New password');if(passwordError)return res.status(400).json({error:passwordError});u.passwordHash=await bcrypt.hash(next,12);await u.save();res.json({ok:true});}catch{res.status(500).json({error:'Could not change password.'});}});
 
 // ─── Menu ──────────────────────────────────────────────────────────────────────
 app.get('/api/menu',async(_req,res)=>res.json({items:await Menu.find({}).sort({category:1,name:1}).lean()}));
 
 // ─── Admin: Staff Access ───────────────────────────────────────────────────────
 app.get('/api/admin/staff-access',auth,roles('admin'),async(_req,res)=>{const users=await User.find({role:{$in:['staff','student']}}).select('name email role counterId verified createdAt').sort({role:1,name:1}).lean();res.json({users:users.map(u=>({...u,id:String(u._id)}))});});
-app.post('/api/admin/staff-access/approve',auth,roles('admin'),async(req,res)=>{try{const email=String(req.body.email||'').trim().toLowerCase(),counterId=String(req.body.counterId||'');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter the exact email used to sign up.'});if(!['C1','C2','C3','C4'].includes(counterId))return res.status(400).json({error:'Choose a valid counter.'});const user=await User.findOne({email});if(!user)return res.status(404).json({error:'No account found for that email. Ask the person to sign up first.'});if(ADMIN_EMAILS.has(email)||user.role==='admin')return res.status(400).json({error:'Admin accounts cannot be changed to staff.'});user.role='staff';user.counterId=counterId;await user.save();res.json({message:'Staff access approved.',user:safeUser(user)});}catch(e){console.error(e);res.status(500).json({error:'Could not approve staff access.'});}});
+app.post('/api/admin/staff-access/approve',auth,roles('admin'),async(req,res)=>{try{const email=String(req.body.email||'').trim().toLowerCase(),counterId=String(req.body.counterId||'');if(!isSomaiyaEmail(email))return res.status(400).json({error:'Enter the exact @somaiya.edu email used to sign up.'});if(!['C1','C2','C3','C4'].includes(counterId))return res.status(400).json({error:'Choose a valid counter.'});const user=await User.findOne({email});if(!user)return res.status(404).json({error:'No account found for that email. Ask the person to sign up first.'});if(ADMIN_EMAILS.has(email)||user.role==='admin')return res.status(400).json({error:'Admin accounts cannot be changed to staff.'});user.role='staff';user.counterId=counterId;await user.save();res.json({message:'Staff access approved.',user:safeUser(user)});}catch(e){console.error(e);res.status(500).json({error:'Could not approve staff access.'});}});
 app.patch('/api/admin/staff-access/:userId/revoke',auth,roles('admin'),async(req,res)=>{try{const user=await User.findById(req.params.userId);if(!user)return res.status(404).json({error:'Account not found.'});if(user.role==='admin'||ADMIN_EMAILS.has(user.email))return res.status(400).json({error:'Admin access cannot be revoked here.'});user.role='student';user.counterId=null;await user.save();res.json({message:'Staff access revoked.',user:safeUser(user)});}catch(e){res.status(500).json({error:'Could not revoke staff access.'});}});
 
 // ─── Menu Management ───────────────────────────────────────────────────────────
