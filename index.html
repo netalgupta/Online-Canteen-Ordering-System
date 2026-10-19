@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="QueueLess lets students pre-order food from Siddhi Services Canteen, choose a pickup slot and track each item without waiting in a long queue.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#A8121C">
+<meta property="og:type" content="website">
+<meta property="og:title" content="QueueLess — Skip the Queue. Pick Up When It's Ready.">
+<meta property="og:description" content="Pre-order from Siddhi Services Canteen, choose a pickup slot and track your order.">
+<meta property="og:site_name" content="QueueLess">
+<title>QueueLess — Skip the Queue. Pick Up When It's Ready.</title>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"QueueLess","description":"Pre-ordering and pickup tracking for Siddhi Services Canteen"}</script>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .hero{padding:22px 0 46px; display:block;}
+  .landing-hero{min-height:500px; border-radius:28px; overflow:hidden; position:relative; background-image:linear-gradient(90deg,rgba(20,20,20,.78) 0%,rgba(20,20,20,.42) 48%,rgba(20,20,20,.12) 100%),url('https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1600&q=85'); background-size:cover; background-position:center; display:flex; align-items:center;}
+  .landing-copy{max-width:650px; padding:54px; color:#fff; position:relative; z-index:1;}
+  .hero-eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.9); background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22); padding:7px 12px; border-radius:999px; margin-bottom:20px; backdrop-filter:blur(8px);}
+  .hero h1{font-size:64px; line-height:1.02; margin-bottom:18px; letter-spacing:-.03em;}
+  .hero h1 span{color:#fff; background:transparent; padding:0; position:relative; white-space:nowrap;}.hero h1 span::after{content:'';position:absolute;left:0;right:0;bottom:-5px;height:7px;background:var(--crimson);border-radius:999px;z-index:-1;opacity:.9;}
+  .hero p.lead{font-size:17px; line-height:1.6; color:rgba(255,255,255,.88); max-width:520px; margin-bottom:30px;}
+  .hero-actions{display:flex; gap:12px; flex-wrap:wrap;}
+  .hero-actions .btn-outline{border-color:rgba(255,255,255,.65); color:#fff; background:rgba(255,255,255,.08);}
+  .hero-actions .btn-outline:hover{background:#fff;color:var(--ink);}
+  .hero-visual{position:absolute; right:34px; bottom:30px; width:235px; background:rgba(255,255,255,.96); border-radius:20px; padding:20px; color:var(--ink); box-shadow:0 18px 45px rgba(0,0,0,.18);}
+  .hero-visual .board-head{margin-bottom:10px;}
+  .hero-visual .board-head .lbl{color:var(--ink-soft);}
+  .hero-visual .board-status{color:var(--crimson);}
+  .hero-visual .board-status .dot{background:var(--crimson);}
+  .hero-visual .token-block{padding:12px 0;}
+  .hero-visual .token-label{color:var(--ink-soft);}
+  .hero-visual .flap-row{display:flex;gap:5px;}
+  .hero-visual .flap{background:var(--crimson);color:#fff;border-radius:7px;padding:9px 12px;font-family:var(--font-mono);font-size:22px;}
+  .hero-visual .board-row{border-top-color:var(--line);font-size:12px;}
+  .hero-visual .board-row .k{color:var(--ink-soft);}.hero-visual .board-row .v{color:var(--ink);}
+  .landing-categories{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px;}
+  .landing-cat{height:142px;border-radius:18px;overflow:hidden;position:relative;background-size:cover;background-position:center;display:flex;align-items:flex-end;padding:16px;color:#fff;text-decoration:none;box-shadow:var(--shadow-s);}
+  .landing-cat::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 20%,rgba(0,0,0,.72));}
+  .landing-cat span{position:relative;z-index:1;font-weight:700;font-size:15px;}
+  @media(max-width:900px){.hero h1{font-size:44px}.landing-copy{padding:40px}.hero-visual{display:none}.landing-categories{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:560px){.hero{padding:12px 0 30px}.landing-hero{min-height:540px;border-radius:20px}.landing-copy{padding:28px 22px}.hero h1{font-size:37px;line-height:1.05}.hero h1 span{white-space:normal}.hero p.lead{font-size:14px}.hero-actions{gap:9px}.hero-actions .btn{width:100%;justify-content:center}.landing-categories{grid-template-columns:1fr 1fr;gap:9px}.landing-cat{height:126px;padding:12px;font-size:13px}}
+
+  .problem-solution{display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:20px;}
+  .ps-card{border-radius:var(--radius-l); padding:30px;}
+  .ps-card.problem{background:var(--white); border:1px solid var(--line);}
+  .ps-card.solution{background:var(--ink); color:var(--near-white);}
+  .ps-card h3{font-size:20px; margin-bottom:18px;}
+  .ps-list li{display:flex; gap:10px; padding:9px 0; font-size:14.5px; border-top:1px solid var(--line);}
+  .ps-card.solution .ps-list li{border-top-color:rgba(248,247,243,.12); color:rgba(248,247,243,.85);}
+  .ps-list li:first-child{border-top:none;}
+  .flow-strip{display:flex; align-items:center; gap:8px; margin-top:22px; flex-wrap:wrap; font-family:var(--font-mono); font-size:13px;}
+  .flow-strip .step{background:rgba(248,247,243,.08); padding:8px 13px; border-radius:999px;}
+  .flow-strip svg{width:14px; height:14px; opacity:.5;}
+
+  .steps-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-top:36px;}
+  .step-card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:24px;}
+  .step-num{font-family:var(--font-mono); font-size:13px; color:var(--crimson); font-weight:700; margin-bottom:14px;}
+  .step-card h4{font-size:17px; margin-bottom:8px;}
+  .step-card p{font-size:13.5px; color:var(--ink-soft);}
+
+  .stats-strip{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border-radius:var(--radius-m); overflow:hidden; margin-top:20px; border:1px solid var(--line);}
+  .stat-cell{background:var(--white); padding:26px 22px;}
+  .stat-cell .n{font-family:var(--font-display); font-size:26px; font-weight:700;}
+  .stat-cell .l{font-size:12.5px; color:var(--ink-soft); margin-top:4px;}
+
+  .final-cta{background:var(--crimson); border-radius:var(--radius-l); padding:50px; text-align:center; margin-top:60px;}
+  .final-cta h2{font-size:32px; margin-bottom:12px; color:#fff;}
+  .final-cta p{color:rgba(255,255,255,.85); margin-bottom:24px;}
+  .final-cta .btn-primary{background:var(--ink);}
+
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr; padding-top:40px;}
+    .hero h1{font-size:38px;}
+    .problem-solution{grid-template-columns:1fr;}
+    .steps-grid{grid-template-columns:1fr 1fr;}
+    .stats-strip{grid-template-columns:1fr 1fr;}
+  }
+
+  /* Landing-page scroll reveals: subtle, fast and intentionally restrained */
+  .scroll-reveal{opacity:0;transform:translateY(22px);transition:opacity .65s ease,transform .65s cubic-bezier(.22,.61,.36,1);will-change:opacity,transform;}
+  .scroll-reveal.is-visible{opacity:1;transform:none;}
+  .scroll-reveal-group > *{opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s cubic-bezier(.22,.61,.36,1);}
+  .scroll-reveal-group.is-visible > *{opacity:1;transform:none;}
+  .scroll-reveal-group.is-visible > *:nth-child(1){transition-delay:.02s}
+  .scroll-reveal-group.is-visible > *:nth-child(2){transition-delay:.07s}
+  .scroll-reveal-group.is-visible > *:nth-child(3){transition-delay:.12s}
+  .scroll-reveal-group.is-visible > *:nth-child(4){transition-delay:.17s}
+  .scroll-reveal-group.is-visible > *:nth-child(5){transition-delay:.22s}
+  .scroll-reveal-group.is-visible > *:nth-child(6){transition-delay:.27s}
+  .scroll-reveal-group.is-visible > *:nth-child(7){transition-delay:.32s}
+  .scroll-reveal-group.is-visible > *:nth-child(8){transition-delay:.37s}
+  .scroll-reveal-group.is-visible > *:nth-child(9){transition-delay:.42s}
+  .scroll-reveal-group.is-visible > *:nth-child(10){transition-delay:.47s}
+  @media (prefers-reduced-motion: reduce){
+    .scroll-reveal,.scroll-reveal-group > *{opacity:1;transform:none;transition:none;}
+  }
+
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="nav-links">
+      <a href="index.html#how">How it works</a>
+      <a href="index.html#why">Why QueueLess</a>
+    </div>
+    <div class="nav-right">
+      <a href="login.html" class="btn btn-outline btn-sm">Log in</a>
+      <a href="register.html" class="btn btn-primary btn-sm">Order Now</a>
+    </div>
+  </div>
+</nav>
+
+<header class="container hero">
+  <div class="landing-hero">
+    <div class="landing-copy">
+      <div class="hero-eyebrow"><i data-lucide="utensils-crossed" style="width:13px;height:13px;"></i> Siddhi Services Canteen</div>
+      <h1>Order your favourites.<br><span>Skip the queue.</span></h1>
+      <p class="lead">Browse the canteen menu visually, order ahead, track preparation and walk in only when your food is ready.</p>
+      <div class="hero-actions">
+        <a href="register.html" class="btn btn-amber">Start Ordering <i data-lucide="arrow-right"></i></a>
+        <a href="login.html" class="btn btn-outline">I already have an account</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="board-head"><span class="lbl">Live order</span><span class="board-status"><span class="dot"></span>Preparing</span></div>
+      <div class="token-block"><div class="token-label">Pickup token</div><div class="flap-row"><div class="flap">2</div><div class="flap">4</div><div class="flap">7</div></div></div>
+      <div class="board-row"><span class="k">Ready</span><span class="v">1:18 PM</span></div>
+      <div class="board-row"><span class="k">Ahead</span><span class="v">4 orders</span></div>
+    </div>
+  </div>
+  <div class="landing-categories scroll-reveal-group">
+    <a class="landing-cat" href="student/menu.html?group=Snacks" style="background-image:url('https://images.unsplash.com/photo-1601050690597-df0568f70950?w=700&q=80')"><span>Snacks & Chaat</span></a>
+    <a class="landing-cat" href="student/menu.html?group=Meals" style="background-image:url('https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=700&q=80')"><span>Meals & Rice</span></a>
+    <a class="landing-cat" href="student/menu.html?group=Beverages" style="background-image:url('https://images.unsplash.com/photo-1571934811356-5cc061b6821f?w=700&q=80')"><span>Tea & Coffee</span></a>
+    <a class="landing-cat" href="student/menu.html?group=Dosas%20%26%20Uttappa" style="background-image:url('https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=700&q=80')"><span>Dosas & Uttappa</span></a>
+    <a class="landing-cat" href="student/menu.html?group=Sandwiches" style="background-image:url('https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=700&q=80')"><span>Sandwiches</span></a>
+  </div>
+</header>
+
+<section class="container section scroll-reveal" id="why">
+  <h2 style="font-size:30px;">Why QueueLess?</h2>
+  <p class="muted" style="max-width:560px; margin-top:8px;">We're not eliminating the kitchen's preparation time. We're eliminating the unnecessary physical waiting — and making the rest predictable.</p>
+
+  <div class="problem-solution scroll-reveal-group">
+    <div class="ps-card problem">
+      <h3>The problem, today</h3>
+      <ul class="ps-list">
+        <li><i data-lucide="x" style="width:15px;height:15px;color:var(--red);flex-shrink:0;margin-top:2px;"></i>Long physical queues at the counter</li>
+        <li><i data-lucide="x" style="width:15px;height:15px;color:var(--red);flex-shrink:0;margin-top:2px;"></i>Limited order-taking staff during rush hour</li>
+        <li><i data-lucide="x" style="width:15px;height:15px;color:var(--red);flex-shrink:0;margin-top:2px;"></i>Fixed kitchen capacity, unpredictable wait</li>
+        <li><i data-lucide="x" style="width:15px;height:15px;color:var(--red);flex-shrink:0;margin-top:2px;"></i>Crowding and congestion during lunch</li>
+        <li><i data-lucide="x" style="width:15px;height:15px;color:var(--red);flex-shrink:0;margin-top:2px;"></i>Students losing class or free time just standing around</li>
+      </ul>
+    </div>
+    <div class="ps-card solution">
+      <h3>The QueueLess flow</h3>
+      <div class="flow-strip">
+        <span class="step">Order remotely</span>
+        <i data-lucide="chevron-right"></i>
+        <span class="step">Track preparation</span>
+        <i data-lucide="chevron-right"></i>
+        <span class="step">Arrive when ready</span>
+        <i data-lucide="chevron-right"></i>
+        <span class="step">Verify token</span>
+        <i data-lucide="chevron-right"></i>
+        <span class="step">Collect</span>
+      </div>
+      <ul class="ps-list" style="margin-top:18px;">
+        <li><i data-lucide="check" style="width:15px;height:15px;color:var(--crimson);flex-shrink:0;margin-top:2px;"></i>See real preparation time before you order</li>
+        <li><i data-lucide="check" style="width:15px;height:15px;color:var(--crimson);flex-shrink:0;margin-top:2px;"></i>Choose a pickup window that fits your schedule</li>
+        <li><i data-lucide="check" style="width:15px;height:15px;color:var(--crimson);flex-shrink:0;margin-top:2px;"></i>Live queue position and kitchen load</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="stats-strip scroll-reveal-group">
+    <div class="stat-cell"><div class="n">Zero</div><div class="l">physical waiting to place an order</div></div>
+    <div class="stat-cell"><div class="n">Live</div><div class="l">kitchen coordination &amp; workload view</div></div>
+    <div class="stat-cell"><div class="n">Real-time</div><div class="l">order tracking, start to pickup</div></div>
+    <div class="stat-cell"><div class="n">Digital</div><div class="l">token verification at the counter</div></div>
+  </div>
+</section>
+
+<section class="container section" id="how">
+  <h2 style="font-size:30px;">How it works</h2>
+  <div class="steps-grid scroll-reveal-group">
+    <div class="step-card">
+      <div class="step-num">01 — Choose</div>
+      <h4>Browse the menu</h4>
+      <p>See what's available right now, with prep time shown on every item.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02 — Pre-order</div>
+      <h4>Place your order</h4>
+      <p>Pick a pickup window that works around your class schedule.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03 — Track</div>
+      <h4>Watch it happen</h4>
+      <p>Live status, queue position and kitchen load, right on your phone.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04 — Collect</div>
+      <h4>Walk in when ready</h4>
+      <p>Get notified, show your token at the counter, and you're done.</p>
+    </div>
+  </div>
+
+  <div class="final-cta scroll-reveal">
+    <h2>Ready to skip the queue?</h2>
+    <p>Set up your account in under a minute.</p>
+    <a href="register.html" class="btn btn-primary">Get Started <i data-lucide="arrow-right"></i></a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>QueueLess — Smart Canteen Pre-Ordering &amp; Queue Management</span>
+    <span>Siddhi Services Canteen · QueueLess</span>
+  </div>
+</footer>
+
+<script src="js/data.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/backend-config.js"></script><script src="js/backend.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+(function(){
+  const revealEls = document.querySelectorAll('.scroll-reveal, .scroll-reveal-group');
+  if (!revealEls.length) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    revealEls.forEach(el => el.classList.add('is-visible'));
+    return;
+  }
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      obs.unobserve(entry.target);
+    });
+  }, { threshold: 0.14, rootMargin: '0px 0px -40px 0px' });
+  revealEls.forEach(el => observer.observe(el));
+})();
+</script>
+</body>
+</html>

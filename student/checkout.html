@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Checkout — QueueLess</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .checkout-wrap{padding:30px 0 60px; display:grid; grid-template-columns:1.4fr 1fr; gap:30px; align-items:flex-start;}
+  .co-section{margin-bottom:26px;}
+  .co-section h3{font-size:15px; margin-bottom:14px; display:flex; align-items:center; gap:8px;}
+  .info-row{display:flex; justify-content:space-between; padding:8px 0; font-size:14px;}
+  .pickup-days{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:11px 13px;background:var(--near-white);border:1px solid var(--line);border-radius:12px;max-width:100%;}
+  .day-tab{border:0;background:transparent;padding:9px 15px;border-radius:9px;font-weight:700;font-size:12px;color:var(--ink-soft);cursor:pointer;}
+  .day-tab.selected{background:var(--white);color:var(--crimson);box-shadow:var(--shadow-s);}
+  .slot-status{font-size:11px;color:var(--ink-soft);margin:10px 0 7px;}
+  .slot-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:7px;max-height:none;overflow:visible;padding-right:0;}
+  .slot{min-height:45px;padding:8px 5px; text-align:center; border:1px solid var(--line); border-radius:10px; background:var(--white);font-family:var(--font-mono); font-weight:700; font-size:12px; cursor:pointer;color:var(--ink-mid);transition:.15s ease;}
+  .slot:hover{border-color:var(--crimson-light);background:var(--crimson-tint);}
+  .slot-empty{grid-column:1/-1;padding:18px;border:1px dashed var(--line-strong);border-radius:12px;background:var(--near-white);display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-soft);}
+  .slot-empty strong{color:var(--ink);font-size:13px;}
+  .slot.selected{border-color:var(--crimson); background:var(--crimson-tint); color:var(--crimson-dark); box-shadow:0 0 0 2px rgba(168,18,28,.08);}.slot.selected::after{content:"✓";display:block;font-size:9px;font-weight:800;margin-top:1px;color:var(--crimson);}.slot-choice-title{font-size:14px;font-weight:800;color:var(--ink);margin:16px 0 6px;}.selected-slot-note{margin-top:10px;padding:9px 11px;border-radius:10px;background:var(--crimson-tint);color:var(--crimson-dark);font-size:11.5px;font-weight:700;}
+  .slot.full{opacity:.42; cursor:not-allowed; position:relative;}
+  .slot .slot-day{display:block; font-family:var(--font-body); font-weight:600; font-size:9px; margin-top:2px; color:var(--ink-soft);}.slot-help{font-size:10.5px;color:var(--ink-soft)}.slot-note{font-size:11.5px;color:var(--ink-soft);margin-top:10px;padding:10px 12px;background:var(--near-white);border-radius:10px}.slot-note strong{color:var(--crimson-dark)}
+  .summary-row{display:flex; justify-content:space-between; padding:7px 0; font-size:13.5px;}
+  .summary-row.total{border-top:1px solid var(--line); margin-top:6px; padding-top:12px; font-weight:700; font-size:16px;}
+  @media(max-width:800px){
+    .checkout-wrap{grid-template-columns:1fr;gap:14px;padding:18px 0 40px;}
+    .checkout-wrap > *{min-width:0;width:100%;}
+    .slot-grid{grid-template-columns:repeat(3,1fr);max-height:none;}
+    .checkout-wrap .card{overflow:hidden;}
+  }
+  @media(max-width:420px){
+    .slot-grid{gap:7px;grid-template-columns:repeat(3,1fr);max-height:none;}
+    .slot{padding:11px 3px;font-size:11.5px;}
+    .day-tab{padding:8px 13px;}
+  }
+
+  .slot-grid:empty{min-height:54px;}
+  .slot-grid .slot{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:45px;}
+  #place-order-btn{cursor:pointer;position:relative;z-index:5;}
+  #place-order-btn:disabled{opacity:.65;cursor:wait;}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="nav-links"><a href="dashboard.html">Home</a><a href="menu.html">Menu</a><a href="history.html">Orders</a><a href="profile.html">Profile</a></div>
+    <div class="nav-right"><a href="cart.html" class="cart-btn" aria-label="Cart"><i data-lucide="shopping-bag" style="width:19px;height:19px;"></i><span class="cart-count">0</span></a><a href="profile.html" class="avatar" id="nav-avatar" aria-label="Profile">A</a></div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-exit-row"><a href="cart.html" class="page-back"><i data-lucide="arrow-left"></i> Back to cart</a><a href="dashboard.html" class="page-back">Exit checkout</a></div>
+  <h1 style="font-size:24px; margin-top:12px;">Checkout</h1>
+  <div class="checkout-wrap" id="checkout-wrap"></div>
+</div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/data.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../js/backend-config.js"></script><script src="../js/backend.js"></script>
+<script src="../js/orders.js"></script>
+<script src="../js/cart.js"></script>
+<script>if(!qlRequireRole('student')){throw new Error('Unauthorized');}</script>
+<script src="../js/app.js"></script>
+<script>
+  const user = qlGetUser();
+  const navAvatar = document.getElementById('nav-avatar'); if(navAvatar) navAvatar.textContent = (user.name||'S').charAt(0).toUpperCase();
+  const cart = qlGetCart();
+  if(cart.length === 0){ window.location.href = 'cart.html'; }
+
+  const menu = qlGetMenu();
+  const prep = qlEstimatePrepTime(cart);
+  const OPEN_HOUR = 8;
+  const CLOSE_HOUR = 19;
+  const SLOT_STEP = 7;
+  const SLOT_HORIZON_MINUTES = 120;
+  const SLOT_CAPACITY = 10;
+  const slotKey = d => d.toISOString().slice(0,16);
+  const getSlotOrderCount = d => {
+    try {
+      return qlGetOrders().filter(o => {
+        if(!o || !o.pickupDate || !Array.isArray(o.items) || !o.items.some(x=>Number(x.qty)>0)) return false;
+        const od = new Date(o.pickupDate);
+        return slotKey(od) === slotKey(d);
+      }).length;
+    } catch(e){ return 0; }
+  };
+  const slotIsFull = d => getSlotOrderCount(d) >= SLOT_CAPACITY;
+
+  function dayAt(offset,hour,minute=0){
+    const d=new Date();
+    d.setDate(d.getDate()+offset);
+    d.setHours(hour,minute,0,0);
+    return d;
+  }
+  function formatSlot(d){
+    return d.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',hour12:true});
+  }
+  function buildPickupSlots(){
+    const now=new Date();
+    const todayOpen=dayAt(0,OPEN_HOUR);
+    const todayClose=dayAt(0,CLOSE_HOUR);
+    let day='today', first, last;
+
+    if(now < todayOpen){
+      first=todayOpen;
+      last=qlAddMinutes(todayOpen,SLOT_HORIZON_MINUTES);
+    }else if(now >= todayClose){
+      day='tomorrow';
+      first=dayAt(1,OPEN_HOUR);
+      last=qlAddMinutes(first,SLOT_HORIZON_MINUTES);
+    }else{
+      // Next valid 7-minute slot, anchored to 8:00 AM.
+      const elapsed=Math.max(0,Math.floor((now-todayOpen)/60000));
+      const nextStep=Math.ceil((elapsed+Math.max(0,prep))/SLOT_STEP);
+      first=qlAddMinutes(todayOpen,nextStep*SLOT_STEP);
+      last=new Date(Math.min(todayClose.getTime(),qlAddMinutes(now,SLOT_HORIZON_MINUTES).getTime()));
+      if(first>last){
+        day='tomorrow';
+        first=dayAt(1,OPEN_HOUR);
+        last=qlAddMinutes(first,SLOT_HORIZON_MINUTES);
+      }
+    }
+
+    const slots=[];
+    for(let t=new Date(first);t<=last;t=qlAddMinutes(t,SLOT_STEP)) slots.push(new Date(t));
+    return {day,slots};
+  }
+
+  const pickup=buildPickupSlots();
+  const selectedDay=pickup.day;
+  const daySlots=pickup.slots;
+  let selectedSlot=daySlots.length ? daySlots[0] : null;
+  let paymentMethod='demo';
+  const subtotal=qlCartSubtotal();
+
+  document.getElementById('checkout-wrap').innerHTML=`
+    <div>
+      <div class="card card-pad co-section">
+        <h3><i data-lucide="map-pin" style="width:16px;height:16px;"></i> Pickup Information</h3>
+        <div class="info-row"><span class="muted">Pickup location</span><span>Main College Canteen</span></div>
+        <div class="info-row"><span class="muted">Estimated preparation</span><span class="mono">~${prep} min</span></div>
+        <div class="info-row"><span class="muted">Canteen hours</span><span>8:00 AM – 7:00 PM</span></div>
+        <div class="pickup-days">
+          <div style="font-size:12px;font-weight:700;color:var(--crimson-dark);">Pickup ${selectedDay==='today'?'today':'tomorrow'}</div>
+          <div style="font-size:10.5px;color:var(--ink-soft);text-align:right;">${selectedDay==='tomorrow'?'8:00–10:00 AM':'Next 2 hours'} · 10 orders/slot</div>
+        </div>
+        <div class="slot-choice-title">Choose a pickup time</div>
+        <div class="slot-help">Full slots are unavailable.</div>
+        <div class="slot-status" id="slot-status"></div>
+        <div class="slot-grid" id="slot-grid"></div>
+        <div class="selected-slot-note" id="selected-slot-note"></div>
+      </div>
+      <div class="card card-pad co-section">
+        <h3><i data-lucide="credit-card" style="width:16px;height:16px;"></i> Payment Method</h3>
+        <label class="radio-row selected" data-pm="demo"><input type="radio" name="pm" checked> Demo payment · no charge</label>
+        <p class="text-xs muted">This is a college-project demo. No UPI, card, or real money is processed. Your order is still saved to the database.</p>
+      </div>
+    </div>
+    <div class="card card-pad">
+      <h3 style="font-size:15px;margin-bottom:14px;">Order Summary</h3>
+      <div id="summary-items"></div>
+      <div class="summary-row"><span class="muted">Subtotal</span><span>₹${subtotal}</span></div>
+      <div class="summary-row"><span class="muted">Packaging</span><span>₹0</span></div>
+      <div class="summary-row total"><span>Total</span><span>₹${subtotal}</span></div>
+      <button type="button" class="btn btn-amber btn-block mt-16" id="place-order-btn">Place Order</button>
+      <div id="order-error" style="display:none;margin-top:10px;color:var(--crimson);font-size:12px;font-weight:700;"></div>
+    </div>`;
+
+  qlIcons();
+  document.getElementById('summary-items').innerHTML=cart.map(ci=>{
+    const item=menu.find(m=>m.id===ci.id);
+    return item ? `<div class="summary-row"><span class="muted">${item.name} × ${ci.qty}</span><span>₹${item.price*ci.qty}</span></div>` : '';
+  }).join('');
+
+  function renderSlots(){
+    const grid=document.getElementById('slot-grid');
+    const status=document.getElementById('slot-status');
+    const note=document.getElementById('selected-slot-note');
+    if(!grid) return;
+    if(!daySlots.length){
+      grid.innerHTML='<div class="slot-empty"><strong>No pickup slots available</strong><span>Please try again shortly.</span></div>';
+      status.textContent='No pickup slots available.';
+      note.textContent='No pickup time selected.';
+      selectedSlot=null;
+      return;
+    }
+    status.textContent=`${daySlots.length} pickup times · every ${SLOT_STEP} min`;
+    const counts=daySlots.map(getSlotOrderCount);
+    let defaultIdx=counts.findIndex(c=>c<SLOT_CAPACITY);
+    if(defaultIdx<0) defaultIdx=0;
+    selectedSlot=daySlots[defaultIdx] || null;
+    grid.innerHTML=daySlots.map((slot,i)=>{
+      const count=counts[i], full=count>=SLOT_CAPACITY;
+      return `<button type="button" class="slot ${i===defaultIdx&&!full?'selected':''} ${full?'full':''}" data-idx="${i}" ${full?'disabled':''}>${formatSlot(slot)}<span class="slot-day">${full?'Full':`${SLOT_CAPACITY-count} ${SLOT_CAPACITY-count===1?'slot':'slots'} left`}</span></button>`;
+    }).join('');
+    if(selectedSlot) note.textContent=`Selected: ${selectedDay==='today'?'Today':'Tomorrow'} · ${formatSlot(selectedSlot)} · ${getSlotOrderCount(selectedSlot)}/${SLOT_CAPACITY} orders`;
+    else note.textContent='All displayed pickup slots are full. Please try again shortly.';
+    grid.querySelectorAll('.slot:not([disabled])').forEach(btn=>btn.addEventListener('click',()=>{
+      grid.querySelectorAll('.slot').forEach(x=>x.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedSlot=daySlots[Number(btn.dataset.idx)];
+      note.textContent=`Selected: ${selectedDay==='today'?'Today':'Tomorrow'} · ${formatSlot(selectedSlot)} · ${getSlotOrderCount(selectedSlot)}/${SLOT_CAPACITY} orders`;
+    }));
+  }
+  renderSlots();
+
+  document.querySelectorAll('.radio-row').forEach(row=>row.addEventListener('click',()=>{
+    document.querySelectorAll('.radio-row').forEach(r=>{r.classList.remove('selected');r.querySelector('input').checked=false;});
+    row.classList.add('selected');
+    row.querySelector('input').checked=true;
+    paymentMethod=row.dataset.pm;
+  }));
+
+  document.getElementById('place-order-btn').addEventListener('click',async function(){
+    const btn=this;
+    const error=document.getElementById('order-error');
+    error.style.display='none';
+    if(!selectedSlot){ error.textContent='Please select a pickup time.'; error.style.display='block'; return; }
+    if(!Array.isArray(cart)||cart.length===0){ window.location.href='cart.html'; return; }
+    if(typeof qlCreateOrder!=='function'){
+      error.textContent='Order service failed to load. Please refresh checkout.'; error.style.display='block'; return;
+    }
+    if(slotIsFull(selectedSlot)){
+      error.textContent='That pickup slot just became full. Please choose another available slot.';
+      error.style.display='block';
+      renderSlots();
+      return;
+    }
+    btn.disabled=true;
+    btn.textContent='Placing order…';
+    try{
+      const pickupLabel=`${selectedDay==='today'?'Today':'Tomorrow'} · ${formatSlot(selectedSlot)}`;
+      const order=await qlCreateOrder({items:cart,pickupTime:pickupLabel,pickupDate:selectedSlot.toISOString(),pickupDateLabel:selectedDay==='today'?'Today':'Tomorrow',paymentMethod});
+      if(!order||!order.id) throw new Error('qlCreateOrder returned no order');
+      qlClearCart();
+      window.location.href=`order.html?id=${encodeURIComponent(order.id)}`;
+    }catch(err){
+      console.error(err);
+      if(err && err.message==='PICKUP_SLOT_FULL'){
+        error.textContent='That pickup slot is now full (10/10). Please choose another slot.';
+        renderSlots();
+      }
+      btn.disabled=false;
+      btn.textContent='Place Order';
+      if(err && err.message==='PICKUP_SLOT_FULL') return;
+      error.textContent=(err&&/PICKUP_SLOT_FULL/.test(err.message))?'That pickup slot is full. Please choose another slot.':'Could not place the order. Please check your connection and try again.';
+      error.style.display='block';
+    }
+  });
+</script>
+</body>
+</html>

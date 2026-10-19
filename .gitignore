@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.DS_Store
+*.log
+
+# MongoDB demo secrets
+server/.env
+node_modules/
+server/node_modules/

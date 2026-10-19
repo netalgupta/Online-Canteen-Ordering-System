@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Home — QueueLess</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .greet{padding:28px 0 8px;}
+  .greet h1{font-size:32px; line-height:1.15;}
+  .greet p{color:var(--ink-soft); margin-top:7px; font-size:15px;}
+  .home-hero{margin:18px 0 24px; min-height:220px; border-radius:26px; overflow:hidden; position:relative; background:linear-gradient(100deg,rgba(26,26,26,.92),rgba(26,26,26,.28)),url('https://images.unsplash.com/photo-1547592180-85f173990554?w=1400&q=85') center/cover;}
+  .home-hero-copy{padding:30px; color:#fff; max-width:560px;}
+  .home-hero-copy .eyebrow{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; opacity:.75;}
+  .home-hero-copy h2{font-size:30px; margin:7px 0 8px;}
+  .home-hero-copy p{font-size:14px; color:rgba(255,255,255,.82); max-width:460px;}
+  .home-hero-actions{display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;}
+  .home-hero .btn-primary{background:var(--crimson); color:#fff;}
+  .search-bar{position:relative; margin:0 0 24px;}
+  .search-bar input{width:100%; padding:15px 18px 15px 46px; border-radius:999px; border:1.5px solid var(--line); background:var(--white); font-size:14.5px; box-shadow:var(--shadow-s);}
+  .search-bar svg{position:absolute; left:17px; top:50%; transform:translateY(-50%); width:18px; height:18px; color:var(--ink-soft);}
+  .home-section{margin:0 0 30px;}
+  .home-section-head{display:flex; align-items:end; justify-content:space-between; gap:12px; margin-bottom:13px;}
+  .home-section-head h2{font-size:20px;}
+  .home-section-head p{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .cat-row{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px;}
+  .cat-pill{min-width:0; display:block; border-radius:18px; overflow:hidden; background:var(--white); border:1px solid var(--line); box-shadow:var(--shadow-s); transition:.18s ease;}
+  .cat-pill:hover{transform:translateY(-3px); border-color:var(--crimson-light); box-shadow:var(--shadow-m);}
+  .cat-pill .ic{height:136px; background-size:cover; background-position:center; position:relative;}
+  .cat-pill .ic::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.55));}
+  .cat-pill .cat-badge{position:absolute; left:10px; bottom:9px; z-index:2; color:#fff; background:rgba(26,26,26,.68); backdrop-filter:blur(5px); padding:4px 8px; border-radius:999px; font-size:10px; font-weight:700;}
+  .cat-pill .cat-body{padding:12px 12px 14px;}
+  .cat-pill span{display:block; font-size:14px; font-weight:700; color:var(--ink);}
+  .cat-pill small{display:block; margin-top:4px; color:var(--ink-soft); font-size:11.5px; line-height:1.4;}
+  .popular-scroll{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
+  .quick-card{background:var(--white); border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:var(--shadow-s);}
+  .quick-card-img{height:105px; background-size:cover; background-position:center;}
+  .quick-card-body{padding:11px 12px 13px;}
+  .quick-card-name{font-size:13.5px; font-weight:700; line-height:1.3;}
+  .quick-card-row{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px;}
+  .quick-card-price{font-family:var(--font-mono); font-size:13px; font-weight:700;}
+  .quick-card .btn{padding:7px 11px; font-size:11px;}
+  .coming-row{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+  .counter-note{border:1px dashed var(--line-strong); background:var(--near-white); border-radius:18px; padding:18px; display:flex; align-items:center; gap:13px;}
+  .counter-note .counter-icon{width:42px; height:42px; border-radius:12px; background:var(--crimson-tint); color:var(--crimson); display:grid; place-items:center; flex-shrink:0;}
+  .counter-note h4{font-size:14px;}
+  .counter-note p{font-size:11.5px; color:var(--ink-soft); margin-top:3px;}
+  .active-order-card{background:var(--ink); color:var(--paper); border-radius:var(--radius-l); padding:26px; position:relative; overflow:hidden; margin-bottom:30px;}
+  .active-order-card::before{content:''; position:absolute; inset:0; background:radial-gradient(circle at 90% 0%, rgba(168,18,28,.35), transparent 55%); pointer-events:none; z-index:0;}
+  .active-order-card > *{position:relative; z-index:1;}
+  .active-order-card a,.active-order-card button{position:relative; z-index:2; pointer-events:auto; cursor:pointer;}
+  .ao-top{display:flex; justify-content:space-between; align-items:flex-start; position:relative;}
+  .ao-id{font-family:var(--font-mono); font-size:13px; color:rgba(248,247,243,.6);}
+  .ao-status-link{display:inline-block;text-decoration:none;color:#fff}.ao-status-link:hover{text-decoration:underline;text-underline-offset:4px}.track-status-link{display:block;text-decoration:none;color:inherit}.track-status-link:hover{opacity:.9}.track-status-link .track-link-hint{display:inline-flex;margin-left:6px;font-size:10px;color:rgba(248,247,243,.72);border:1px solid rgba(248,247,243,.22);padding:2px 6px;border-radius:999px}.ao-status{font-size:20px; font-family:var(--font-display); font-weight:700; margin-top:4px;}
+  .ao-meta{display:flex; gap:28px; margin-top:18px; position:relative;}
+  .ao-meta div .l{font-size:11.5px; color:rgba(248,247,243,.55); text-transform:uppercase; letter-spacing:.04em;}
+  .ao-meta div .v{font-family:var(--font-mono); font-size:17px; font-weight:700; margin-top:3px;}
+  .ao-progress{margin-top:20px; position:relative;}
+  .ao-progress .progress{background:rgba(248,247,243,.15);}
+  .track-quick-card{display:flex;align-items:center;justify-content:space-between;gap:18px;background:var(--white);border:1px solid var(--line);border-radius:18px;padding:18px 20px;margin:0 0 26px;box-shadow:var(--shadow-s);}
+  .track-quick-eyebrow{font-size:10px;letter-spacing:.1em;font-weight:700;color:var(--crimson);}
+  .track-quick-card h3{font-size:17px;margin-top:3px;}
+  .track-quick-card p{font-size:12px;color:var(--ink-soft);margin-top:3px;}
+  @media(max-width:600px){.track-quick-card{align-items:flex-start;flex-direction:column;}.track-quick-card .btn{width:100%;}
+  }
+  .section-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
+  .section-head h2{font-size:19px;}
+  .view-all-menu{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border:1.5px solid var(--crimson);border-radius:12px;background:var(--crimson-tint);color:var(--crimson-dark);font-size:13px;font-weight:800;white-space:nowrap;box-shadow:0 5px 16px rgba(168,18,28,.12);transition:.18s ease;}
+  .view-all-menu:hover{border-color:var(--crimson-dark);color:#fff;background:var(--crimson);transform:translateY(-1px);box-shadow:0 7px 18px rgba(168,18,28,.2);}
+  .view-all-menu svg{width:16px;height:16px;}
+  @media(max-width:600px){.home-section-head{align-items:flex-start}.view-all-menu{padding:10px 13px;font-size:12px;}.view-all-menu span{display:inline;}}
+  @media(max-width:1180px){.cat-row{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:700px){.container{padding:0 14px}.greet{padding-top:22px}.greet h1{font-size:25px}.home-hero{min-height:245px;border-radius:20px}.home-hero-copy{padding:24px}.home-hero-copy h2{font-size:25px}.cat-row{grid-template-columns:repeat(2,1fr);gap:10px}.cat-pill .ic{height:118px}.search-bar input{font-size:13.5px}.ao-meta{gap:18px;flex-wrap:wrap}}
+  @media(max-width:420px){.cat-row{grid-template-columns:1fr 1fr}.cat-pill .ic{height:104px}.cat-pill .cat-body{padding:10px}.cat-pill small{font-size:10.5px}.home-hero-copy h2{font-size:22px}.home-hero-copy p{font-size:13px}}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="nav-links">
+      <a href="dashboard.html" class="active">Home</a>
+      <a href="menu.html">Menu</a>
+      <a href="history.html">Orders</a>
+      <a href="profile.html">Profile</a>
+    </div>
+    <div class="nav-right">
+      <a href="cart.html" class="cart-btn"><i data-lucide="shopping-bag" style="width:19px;height:19px;"></i><span class="cart-count">0</span></a>
+      <a href="profile.html" class="avatar" id="avatar-init">A</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="greet">
+    <h1>Good afternoon, <span id="student-name">Student</span> 👋</h1>
+    <p>What are you craving today?</p>
+  </div>
+
+  <div class="search-bar">
+    <i data-lucide="search"></i>
+    <input type="text" id="home-search" placeholder="Search food, drinks and snacks..." onkeydown="if(event.key==='Enter'){window.location.href='menu.html?q='+encodeURIComponent(this.value)}">
+  </div>
+
+  <section class="home-hero">
+    <div class="home-hero-copy">
+      <div class="eyebrow">Siddhi Services Canteen</div>
+      <h2>Skip the queue. Pick your food. Keep moving.</h2>
+      <p>Browse the canteen counters, add your favourites and collect when your order is ready.</p>
+      <div class="home-hero-actions">
+        <a href="menu.html" class="btn btn-primary">Browse full menu <i data-lucide="arrow-right"></i></a>
+        <a href="menu.html?group=Meals" class="btn btn-outline" style="background:rgba(255,255,255,.92);border-color:#fff;">Today's meals</a>
+      </div>
+    </div>
+  </section>
+
+  <div id="active-order-slot"></div>
+
+  <section class="home-section">
+    <div class="home-section-head"><div><h2>What are you in the mood for?</h2><p>Tap a counter to see its full item list.</p></div><a href="menu.html" class="view-all-menu"><i data-lucide="utensils"></i><span>View all menu</span><i data-lucide="arrow-up-right"></i></a></div>
+    <div class="cat-row" id="cat-row"></div>
+  </section>
+</div>
+
+<footer class="site-footer"><div class="container"><span>QueueLess</span><span>Main College Canteen</span></div></footer>
+
+<script src="../js/auth.js"></script>
+<script src="../js/data.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../js/backend-config.js"></script><script src="../js/backend.js"></script>
+<script src="../js/orders.js"></script>
+<script src="../js/cart.js"></script>
+<script src="../js/menu.js"></script>
+<script>if(!qlRequireRole('student')){throw new Error('Unauthorized');}</script>
+<script src="../js/app.js"></script>
+<script>
+  const user = qlGetUser();
+  document.getElementById('student-name').textContent = user.name || 'Student';
+  document.getElementById('avatar-init').textContent = (user.name||'S').charAt(0).toUpperCase();
+
+  const CATS = [
+    {name:'Snacks', image:'Snacks', count:'Chaat, quick bites & savouries'},
+    {name:'Packaged Snacks', image:'Packaged Snacks', count:'Chips, Kurkure, biscuits & munchies'},
+    {name:'Meals', image:'Lunch Items', count:'Rice, bhaji, biryani & lunch plates'},
+    {name:'Beverages', image:'Hot Items', count:'Tea, coffee, milk & more'},
+    {name:'Dosas & Uttappa', image:'Dosa Items', count:'All dosa & uttappa options'},
+    {name:'Sandwiches', image:'Sandwiches Item', count:'Toast, club & grilled'},
+    {name:'Chinese', image:'Noodles', count:'Noodles & choupsey'},
+    {name:'Soups', image:'Soup', count:'Manchow, tomato & clear soup'},
+    {name:'Juices', image:'Juices', count:'Fresh juices & chilled drinks'},
+    {name:'Frankie Counter', image:'Frankie Counter', count:'Frankies, wraps & rolls'},
+    {name:'Desserts', image:'Desserts', count:'Ice creams & sweet treats'}
+  ];
+  document.getElementById('cat-row').innerHTML = CATS.map(c=>`
+    <a href="menu.html?group=${encodeURIComponent(c.name)}" class="cat-pill">
+      <div class="ic" style="background-image:url('${QL_CATEGORY_IMAGES[c.image]}')"><span class="cat-badge">Browse</span></div>
+      <div class="cat-body"><span>${c.name}</span><small>${c.count}</small></div>
+    </a>`).join('');
+
+  function renderActiveOrders(){
+    if(typeof qlProcessItemReadiness==='function') qlProcessItemReadiness();
+    const activeOrders = qlGetStudentOrders().filter(o=>Array.isArray(o.items) && o.items.some(ci=>Number(ci.qty)>0) && Array.isArray(o.itemTracks) && o.itemTracks.some(t=>t && t.trackId && Number(t.qty)>0) && o.status!=='collected').sort((a,b)=>new Date(a.pickupDate||0)-new Date(b.pickupDate||0)||b.createdAt-a.createdAt);
+    const slot = document.getElementById('active-order-slot'); const menu=qlGetMenu();
+    if(activeOrders.length){
+      slot.innerHTML = activeOrders.map(active=>{
+        const activeTracks=(active.itemTracks||[]).filter(t=>t.status!=='collected');
+        const firstTrack=activeTracks[0];
+        const trackRows=activeTracks.map(t=>{
+          const item=menu.find(m=>m.id===t.id); const counter=qlGetCounter(t.counterId||qlGetItemCounter(item).id); const pos=qlQueuePosition(active.id,t.trackId);
+          const readiness=t.status==='ready'?'Ready for pickup now':t.status==='collected'?'Collected':t.readyAt?`Approx. prep starts ${qlTimeLeftLabel(t.readyAt).replace('Ready in ','in ').replace('Estimated prep time reached — waiting for staff','estimated prep time reached — waiting for staff')}`:`${pos} ahead`;
+          return `<div class="track-row-link" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-top:1px solid rgba(248,247,243,.12);"><a href="track.html?id=${active.id}&track=${t.trackId}" class="track-status-link" style="min-width:0"><strong style="font-size:14px">${item?.name||'Item'} × ${t.qty}</strong><div style="font-size:11px;color:rgba(248,247,243,.58);margin-top:3px">${QL_STATUS_LABEL[t.status]} · ${counter.short} · ${readiness} <span class="track-link-hint">View tracking →</span></div></a><a href="track.html?id=${active.id}&track=${t.trackId}" class="btn btn-amber btn-sm" style="white-space:nowrap">Track</a></div>`;
+        }).join('');
+        return `<div class="active-order-card">
+          <div class="ao-top"><div><div class="ao-id">PICKUP TOKEN #${String(active.token||'—').padStart(4,'0')}</div><a class="ao-status ao-status-link" href="track.html?id=${active.id}&track=${firstTrack?.trackId||''}">Active order · tracking available ↗</a></div><span class="pill pill-amber"><span class="pill-dot"></span>${activeTracks.length} live track${activeTracks.length===1?'':'s'}</span></div>
+          <div class="ao-meta"><div><div class="l">Pickup</div><div class="v">${active.pickupTime}</div></div><div><div class="l">Items</div><div class="v">${activeTracks.length}</div></div></div>
+          <div style="margin-top:10px">${trackRows}</div>
+          <a href="order.html?id=${encodeURIComponent(active.id)}" class="btn btn-outline btn-sm mt-16" style="border-color:rgba(248,247,243,.25);color:#fff">View token</a>
+        </div>`;
+      }).join('') + `<a href="history.html" class="btn btn-outline btn-sm mt-16">View all orders <i data-lucide="arrow-right" style="width:14px;height:14px;"></i></a>`;
+    } else {
+      slot.innerHTML = `<div class="track-quick-card"><div><span class="track-quick-eyebrow">ORDER TRACKING</span><h3>No active order right now</h3><p>Place an order and you can follow its queue status here.</p></div><a href="history.html" class="btn btn-primary btn-sm">View orders <i data-lucide="arrow-right"></i></a></div>`;
+    }
+    qlIcons();
+  }
+  renderActiveOrders();
+  window.addEventListener('ql:backend-ready', renderActiveOrders);
+  window.addEventListener('ql:orders-updated', renderActiveOrders);
+  setInterval(renderActiveOrders,1000);
+</script>
+</body>
+</html>

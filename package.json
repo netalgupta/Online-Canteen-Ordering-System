@@ -1,0 +1,10 @@
+{
+  "name": "queueless-supabase-demo",
+  "version": "0.36.0",
+  "private": true,
+  "description": "QueueLess demo using Supabase Auth and PostgreSQL; demo-only checkout payment",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check:js": "node --check js/backend.js && node --check js/auth.js && node --check js/orders.js && node --check js/data.js"
+  }
+}

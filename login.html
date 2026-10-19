@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Log in — QueueLess</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .auth-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .auth-card{width:100%; max-width:400px;}
+  .auth-brand{display:flex; align-items:center; gap:9px; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:20px; margin-bottom:26px;}
+  .auth-card .card{padding:32px;}
+  .auth-card h1{font-size:22px; margin-bottom:6px;}
+  .auth-card p.sub{color:var(--ink-soft); font-size:13.5px; margin-bottom:24px;}
+  .auth-foot{text-align:center; margin-top:20px; font-size:13.5px; color:var(--ink-soft);}
+  .auth-foot a{color:var(--ink); font-weight:600;}
+  .access-note{padding:12px 13px;margin:0 0 18px;border-radius:10px;background:var(--crimson-tint);border:1px solid #f4c9cc;color:var(--crimson-dark);font-size:11.5px;line-height:1.45;}
+  .access-note strong{display:block;font-size:12.5px;margin-bottom:2px;}
+  .demo-access{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);}
+  .demo-access p{font-size:11.5px;color:var(--ink-soft);margin-bottom:9px;}
+  .demo-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+  .demo-buttons button{border:1px solid var(--line);background:var(--white);border-radius:10px;padding:9px 5px;font-size:11px;font-weight:700;cursor:pointer;}
+  .demo-buttons button:hover{border-color:var(--crimson);background:var(--crimson-tint);color:var(--crimson-dark);}
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <a href="index.html" class="auth-brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="card">
+      <h1>Welcome back</h1>
+      <p class="sub">Log in to pre-order, track and collect.</p>
+
+      <div class="access-note"><strong>Secure sign in</strong>Sign in with your registered email. Your authorized role determines which workspace opens.</div>
+
+      <form id="login-form">
+        <div class="field">
+          <label>College email</label>
+          <input type="email" id="email" placeholder="arya@somaiya.edu" required>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <div style="position:relative"><input type="password" id="password" placeholder="Password" required style="padding-right:48px"><button type="button" class="password-toggle" data-target="password" aria-label="Show password" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;cursor:pointer;padding:8px;color:var(--ink-soft)"><i data-lucide="eye"></i></button></div>
+        </div>
+        <button type="submit" class="btn btn-amber btn-block">Log In <i data-lucide="arrow-right"></i></button>
+      </form>
+      <p id="auth-message" role="status" style="display:none;margin-top:12px;font-size:13px;color:var(--crimson-dark)"></p>
+      <div class="field" style="margin-top:12px"><button type="button" id="forgot-password" class="text-link" style="border:0;background:none;padding:0;color:var(--ink-soft);cursor:pointer">Forgot password?</button></div>
+      <div class="demo-access" style="display:none">
+        <p>Quick access</p>
+        <div class="demo-buttons">
+          <button type="button" data-role="student">Student</button>
+          <button type="button" data-role="admin">Admin</button>
+          <button type="button" data-role="staff" data-counter="C1">Staff · Counter 1</button>
+          <button type="button" data-role="staff" data-counter="C2">Staff · Counter 2</button>
+          <button type="button" data-role="staff" data-counter="C3">Staff · Counter 3</button>
+          <button type="button" data-role="staff" data-counter="C4">Staff · Counter 4</button>
+        </div>
+      </div>
+    </div>
+    <p class="auth-foot">New to QueueLess? <a href="register.html">Create an account</a></p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/backend-config.js"></script><script src="js/data.js"></script><script src="js/backend.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.querySelectorAll('.password-toggle').forEach(b=>b.addEventListener('click',()=>{const i=document.getElementById(b.dataset.target);i.type=i.type==='password'?'text':'password';b.innerHTML=`<i data-lucide="${i.type==='password'?'eye':'eye-off'}"></i>`;b.setAttribute('aria-label',i.type==='password'?'Show password':'Hide password');if(window.lucide)lucide.createIcons();}));
+  const loginForm=document.getElementById('login-form'); const authMessage=document.getElementById('auth-message');
+  function showAuthMessage(message,isError=true){authMessage.textContent=message;authMessage.style.display='block';authMessage.style.color=isError?'var(--crimson-dark)':'#237547';}
+  const qs=new URLSearchParams(location.search); if(qs.get('verified')==='1')showAuthMessage('Email verified. You can now log in.',false);
+  loginForm.addEventListener('submit',async(e)=>{e.preventDefault();const btn=loginForm.querySelector('button[type="submit"]');btn.disabled=true;btn.textContent='Signing in…';try{const user=await window.qlBackend.signIn(document.getElementById('email').value.trim(),document.getElementById('password').value);window.location.href=qlRoleHome(user.role);}catch(err){showAuthMessage(err.message||'Could not sign in.');btn.disabled=false;btn.innerHTML='Log In <i data-lucide="arrow-right"></i>';if(window.lucide)lucide.createIcons();}});
+  document.getElementById('forgot-password').addEventListener('click',async()=>{const email=document.getElementById('email').value.trim();if(!email){showAuthMessage('Enter your email above first.');return;}try{await window.qlBackend.resetPassword(email);showAuthMessage('Password reset email sent. Check your inbox.',false);}catch(e){showAuthMessage(e.message||'Could not send reset email.');}});
+</script>
+</body>
+</html>

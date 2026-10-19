@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Menu Availability — QueueLess Staff</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/dashboard.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+
+<div class="dash-shell">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <nav class="dash-nav">
+      <a href="dashboard.html"><i data-lucide="layout-grid"></i> Orders</a>
+      <a href="menu.html" class="active"><i data-lucide="utensils"></i> Menu Availability</a>
+    </nav>
+    <div class="dash-sidebar-foot">Logged in as Kitchen Staff<br><a href="#" onclick="qlLogout();return false;" style="color:rgba(248,247,243,.7);">Log out</a></div>
+  </aside>
+
+  <div class="dash-mobile-nav"><a href="dashboard.html">Orders</a><a href="menu.html" class="active">Menu</a></div>
+
+  <main class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 style="font-size:20px;" id="staff-counter-title">Counter Menu</h1>
+        <p class="text-sm muted" id="staff-counter-subtitle">Counter menu availability</p>
+      </div>
+      <div class="dash-user">
+        <span class="role-badge">Staff</span><span class="pill pill-muted" id="staff-counter-pill">Main Canteen</span>
+        <span class="dash-user-label muted text-sm" id="dash-user-name"></span>
+        <a class="dash-user-avatar" id="dash-avatar" href="../student/profile.html">S</a>
+        <div class="dash-user-links"><a href="../student/profile.html">Profile</a><a href="#" class="logout" onclick="qlLogout();return false;">Log out</a></div>
+      </div>
+    </div>
+
+    <div class="dash-content">
+      <div class="menu-manage-tools">
+        <div class="menu-search-wrap">
+          <i data-lucide="search"></i>
+          <input id="menu-search" class="menu-search" type="search" placeholder="Search this counter's menu..." autocomplete="off">
+          <button id="menu-search-clear" class="menu-search-clear" type="button" aria-label="Clear search">×</button>
+        </div>
+        <span id="menu-search-count" class="menu-search-count"></span>
+      </div>
+      <div class="card" style="overflow-x:auto;">
+        <table class="menu-table">
+          <thead>
+            <tr><th></th><th>Item</th><th>Category</th><th>Price</th><th>Prep Time</th><th>Available</th></tr>
+          </thead>
+          <tbody id="menu-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/data.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../js/backend-config.js"></script><script src="../js/backend.js"></script>
+<script>
+  const dashUser = qlGetUser();
+  const dashName = document.getElementById('dash-user-name');
+  const dashAvatar = document.getElementById('dash-avatar');
+  if(dashName) dashName.textContent = dashUser.name || '';
+  if(dashAvatar) dashAvatar.textContent = (dashUser.name || 'S').charAt(0).toUpperCase();
+  const previewCounter=new URLSearchParams(window.location.search).get('counter');
+  const staffCounter=qlGetCounter(previewCounter||dashUser.counterId||'C4');
+  const staffCounterPill=document.getElementById('staff-counter-pill');
+  const counterTitles={C1:'Packaged Snacks & Ice Cream Counter',C2:'Frankie & Juice Counter',C3:'Chaat Counter',C4:'Main Canteen Counter'};
+  const staffCounterTitle=document.getElementById('staff-counter-title');
+  if(staffCounterTitle) staffCounterTitle.textContent=counterTitles[staffCounter.id] || (staffCounter.name + ' Counter');
+  if(staffCounterPill) staffCounterPill.textContent=staffCounter.name;
+  const staffCounterSubtitle=document.getElementById('staff-counter-subtitle');
+  if(staffCounterSubtitle) staffCounterSubtitle.textContent=staffCounter.name + ' · only items for this counter';
+</script>
+
+<script>if(!qlRequireRole('staff')){throw new Error('Unauthorized');}</script>
+<script src="../js/app.js"></script>
+<script>
+  function render(){
+    const menu = qlGetMenu();
+    const query = (document.getElementById('menu-search')?.value || '').trim().toLowerCase();
+    const visibleMenu = menu.filter(item => qlGetItemCounter(item).id === staffCounter.id &&
+      (!query || `${item.name} ${item.category}`.toLowerCase().includes(query)));
+    document.getElementById('menu-search-count').textContent = query ? `${visibleMenu.length} matching item${visibleMenu.length===1?'':'s'}` : `${visibleMenu.length} items`;
+    document.getElementById('menu-tbody').innerHTML = visibleMenu.length ? visibleMenu.map(item=>`
+      <tr data-id="${item.id}">
+        <td><img class="mini-thumb" src="${qlGetItemImage(item)}" alt=""></td>
+        <td>${item.name}</td>
+        <td class="muted text-sm">${item.category}</td>
+        <td class="mono">₹${item.price}</td>
+        <td><input type="number" class="prep-input" value="${item.prepTimeMinutes}" min="1" style="width:60px; padding:6px 8px; border:1.5px solid var(--line); border-radius:6px; font-family:var(--font-mono);"> min</td>
+        <td><div class="toggle ${item.available?'on':''}"></div></td>
+      </tr>`).join('') : `<tr><td colspan="6" style="padding:28px;text-align:center;color:var(--ink-soft);">No menu items match “${query.replace(/"/g,'&quot;')}”.</td></tr>`;
+    qlIcons();
+
+    document.querySelectorAll('.toggle').forEach(t=>{
+      t.addEventListener('click', ()=>{
+        const id = t.closest('tr').dataset.id;
+        const menu = qlGetMenu();
+        const item = menu.find(m=>m.id===id);
+        item.available = !item.available;
+        qlSaveMenu(menu);
+        t.classList.toggle('on');
+        qlToast(`${item.name} marked ${item.available?'available':'unavailable'}`);
+      });
+    });
+
+    document.querySelectorAll('.prep-input').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const id = inp.closest('tr').dataset.id;
+        const menu = qlGetMenu();
+        const item = menu.find(m=>m.id===id);
+        item.prepTimeMinutes = parseInt(inp.value) || item.prepTimeMinutes;
+        qlSaveMenu(menu);
+        qlToast(`${item.name} prep time updated`);
+      });
+    });
+  }
+  const menuSearch = document.getElementById('menu-search');
+  const menuSearchClear = document.getElementById('menu-search-clear');
+  menuSearch.addEventListener('input', ()=>{
+    menuSearchClear.classList.toggle('show', !!menuSearch.value);
+    render();
+  });
+  menuSearchClear.addEventListener('click', ()=>{ menuSearch.value=''; menuSearchClear.classList.remove('show'); menuSearch.focus(); render(); });
+  render();
+</script>
+</body>
+</html>

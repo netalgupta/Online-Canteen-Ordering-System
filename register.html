@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Create account — QueueLess</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .auth-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .auth-card{width:100%; max-width:400px;}
+  .auth-brand{display:flex; align-items:center; gap:9px; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:20px; margin-bottom:26px;}
+  .auth-card .card{padding:32px;}
+  .auth-card h1{font-size:22px; margin-bottom:6px;}
+  .auth-card p.sub{color:var(--ink-soft); font-size:13.5px; margin-bottom:24px;}
+  .auth-foot{text-align:center; margin-top:20px; font-size:13.5px; color:var(--ink-soft);}
+  .auth-foot a{color:var(--ink); font-weight:600;}
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <a href="index.html" class="auth-brand"><span class="brand-mark">Q</span>QueueLess</a>
+    <div class="card">
+      <h1>Create your account</h1>
+      <p class="sub">Create your student account to order and track canteen pickups.</p>
+      <form id="register-form">
+        <div class="field">
+          <label>Full name</label>
+          <input type="text" id="name" placeholder="Arya Sharma" required>
+        </div>
+        <div class="field">
+          <label>College email</label>
+          <input type="email" id="email" placeholder="arya@somaiya.edu" required>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <div style="position:relative"><input type="password" id="password" placeholder="At least 6 characters" minlength="6" required style="padding-right:48px"><button type="button" class="password-toggle" data-target="password" aria-label="Show password" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;cursor:pointer;padding:8px;color:var(--ink-soft)"><i data-lucide="eye"></i></button></div><small style="display:block;color:var(--ink-soft);font-size:12px;margin-top:6px">Password must be at least 6 characters and include one capital letter and one special character (e.g. ! @ # $).</small>
+        </div>
+        <p id="auth-message" role="status" style="display:none;margin:0 0 12px;font-size:13px;color:var(--crimson-dark)"></p>
+        <button type="submit" class="btn btn-amber btn-block" id="register-btn">Create Account <i data-lucide="arrow-right"></i></button>
+      </form>
+    </div>
+    <p class="auth-foot">Already have an account? <a href="login.html">Log in</a></p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/backend-config.js"></script><script src="js/data.js"></script><script src="js/backend.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.querySelectorAll('.password-toggle').forEach(b=>b.addEventListener('click',()=>{const i=document.getElementById(b.dataset.target);i.type=i.type==='password'?'text':'password';b.innerHTML=`<i data-lucide="${i.type==='password'?'eye':'eye-off'}"></i>`;b.setAttribute('aria-label',i.type==='password'?'Show password':'Hide password');if(window.lucide)lucide.createIcons();}));
+  document.getElementById('register-form').addEventListener('submit',async(e)=>{e.preventDefault();const message=document.getElementById('auth-message');const show=(t,ok=false)=>{message.textContent=t;message.style.display='block';message.style.color=ok?'#237547':'var(--crimson-dark)'};const name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim(),password=document.getElementById('password').value; if(password.length<6||!/[A-Z]/.test(password)||!/[!@#$%^&*(),.?":{}|<>_\[\]\\/+=~-]/.test(password)){show('Password must be at least 6 characters and include one capital letter and one special character.');return;}const btn=document.getElementById('register-btn');btn.disabled=true;btn.textContent='Creating account…';try{const result=await window.qlBackend.signUp({name,email,password});if(result.session){show('Account created. You are signed in; opening QueueLess…',true);window.location.href=qlRoleHome('student');}else{show('Account created. Check your email for the Supabase verification link, then sign in.',true);btn.disabled=false;btn.textContent='Create Account';}}catch(err){show(err.message||'Could not create account.');btn.disabled=false;btn.textContent='Create Account';}});
+</script>
+</body>
+</html>
